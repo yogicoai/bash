@@ -1,0 +1,17 @@
+{
+  "name": "dash",
+  "version": "0.1.0",
+  "private": true,
+  "description": "요기보 통합 대시보드 셸 — 오프라인/온라인/마케팅/B2B/CS 대시보드 단일 진입점",
+  "scripts": {
+    "dev": "next dev -p 5800",
+    "build": "next build",
+    "start": "next start -p 5800",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
