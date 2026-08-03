@@ -4,17 +4,20 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 
 /**
  * 보기 모드 두 가지.
- *   nav   — 사이드바로 이동하는 일반 대시보드 (기본)
- *   popup — 한 페이지에 버튼(카드)만 두고, 누르면 전부 팝업으로 뜬다
+ *   popup — 한 페이지에 버튼(카드)만 두고, 누르면 전부 팝업으로 뜬다 (기본)
+ *   nav   — 사이드바로 이동하는 일반 대시보드
  *
  * 내부 화면도 같은 출처라 iframe으로 띄울 수 있다.
  * 다만 사이드바가 중첩되므로 팝업으로 열 때는 ?bare=1 을 붙여 셸을 벗긴다.
+ *
+ * 처음 들어오면 "한 페이지"로 보인다. 한 번 고르면 그 선택이 남는다.
  */
 const KEY = 'dash.viewMode';
-const ViewModeContext = createContext({ mode: 'nav', setMode: () => {}, ready: false });
+const DEFAULT_MODE = 'popup';
+const ViewModeContext = createContext({ mode: DEFAULT_MODE, setMode: () => {}, ready: false });
 
 export function ViewModeProvider({ children }) {
-  const [mode, setModeState] = useState('nav');
+  const [mode, setModeState] = useState(DEFAULT_MODE);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
