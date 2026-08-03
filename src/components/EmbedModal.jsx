@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { ZONE_COMMANDS } from '@/lib/zones';
 
 const EmbedContext = createContext({ open: () => {} });
 
@@ -45,6 +46,11 @@ export function EmbedProvider({ children }) {
                 <button type="button" className="embed-close" onClick={close} aria-label="닫기">✕</button>
               </div>
             </header>
+            {ZONE_COMMANDS[item.slug] && (
+              <div className="embed-hint">
+                화면이 비어 있으면 그 앱이 아직 안 떠 있는 겁니다 — <code>{ZONE_COMMANDS[item.slug]}</code>
+              </div>
+            )}
             <iframe className="embed-frame" src={item.href} title={item.name} />
           </div>
         </div>

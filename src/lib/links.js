@@ -10,6 +10,8 @@
  *   'external' Cafe24에 그대로 두고 링크만 (Cafe24 API에 물려 있어 이관 대상 아님)
  */
 
+import { ZONES } from './zones';
+
 export const GROUPS = [
   {
     id: 'offline',
@@ -115,10 +117,10 @@ export const GROUPS = [
     items: [
       {
         name: '온라인 판매분석',
-        href: '/online',
+        href: ZONES.online,
+        slug: 'zone-online',
         icon: '🛍️',
-        status: 'planned',
-        phase: 6,
+        status: 'external',
         desc: '유입·회원/비회원·쿠폰 프로모션 분석',
         source: 'onlineData · Next 14 + MCP 서버',
       },
@@ -132,19 +134,19 @@ export const GROUPS = [
     items: [
       {
         name: '광고 통합',
-        href: '/marketing/ads',
+        href: ZONES.ads,
+        slug: 'zone-ads',
         icon: '📢',
-        status: 'planned',
-        phase: 6,
+        status: 'external',
         desc: '네이버SA · META · 카카오모먼트 + 유입·매출(UTM)',
         source: 'mkboard · Next 16',
       },
       {
         name: '블로그 통계',
-        href: '/marketing/blog',
+        href: ZONES.blog,
+        slug: 'zone-blog',
         icon: '📝',
-        status: 'planned',
-        phase: 6,
+        status: 'external',
         desc: '네이버 블로그 통계 시각화',
         source: 'BlogData · Next 16',
       },
@@ -158,10 +160,10 @@ export const GROUPS = [
     items: [
       {
         name: 'B2B 메일 마케팅',
-        href: '/b2b',
+        href: ZONES.b2b,
+        slug: 'zone-b2b',
         icon: '📧',
-        status: 'planned',
-        phase: 6,
+        status: 'external',
         desc: '키워드 크롤링 → AI 검증 → 승인 → 발송',
         source: 'mktCl · Next 16',
       },
@@ -175,10 +177,10 @@ export const GROUPS = [
     items: [
       {
         name: 'CS 셀프가이드',
-        href: '/cs',
+        href: ZONES.cs,
+        slug: 'zone-cs',
         icon: '🎧',
-        status: 'planned',
-        phase: 6,
+        status: 'external',
         desc: '상담 응대 가이드',
         source: 'cs-self-guide · Next 16 + TS',
       },
