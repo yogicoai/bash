@@ -7,7 +7,8 @@
     "dev": "next dev -p 5800",
     "build": "next build",
     "start": "next start -p 5800",
-    "lint": "next lint"
+    "lint": "next lint",
+    "hash": "node scripts/hash.mjs"
   },
   "dependencies": {
     "html2canvas": "^1.4.1",

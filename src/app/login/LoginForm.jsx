@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 
-export default function LoginForm({ next = '/' }) {
+export default function LoginForm({ next = '/', multiUser = false }) {
+  const [id, setId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -15,7 +16,7 @@ export default function LoginForm({ next = '/' }) {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ id, password }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.success) {
@@ -34,17 +35,26 @@ export default function LoginForm({ next = '/' }) {
   return (
     <form onSubmit={onSubmit}>
       {error && <div className="error">{error}</div>}
+
+      {multiUser && (
+        <label className="field">
+          <span>아이디</span>
+          <input value={id} onChange={(e) => setId(e.target.value)} autoFocus autoComplete="username" />
+        </label>
+      )}
+
       <label className="field">
         <span>비밀번호</span>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          autoFocus
+          autoFocus={!multiUser}
           autoComplete="current-password"
         />
       </label>
-      <button type="submit" className="btn btn-primary" disabled={busy || !password}>
+
+      <button type="submit" className="btn btn-primary" disabled={busy || !password || (multiUser && !id)}>
         {busy ? '확인 중…' : '로그인'}
       </button>
     </form>

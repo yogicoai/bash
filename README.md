@@ -19,10 +19,26 @@ npm run dev        # http://localhost:5800
 
 | 변수 | 설명 |
 |---|---|
-| `DASH_PASSWORD` | 공용 로그인 비밀번호 |
+| `DASH_USERS` | 계정 목록 — `아이디:비밀번호` 를 쉼표로 구분 |
+| `DASH_PASSWORD` | (구방식) `DASH_USERS` 가 비었을 때만 쓰는 단일 비밀번호 |
 | `DASH_SESSION_SECRET` | 세션 쿠키 서명 키 (랜덤 64자 hex) |
 | `REALTIME_API` · `OFFORDER_API` | 오프라인 원천 API 주소 |
 | `NEXT_PUBLIC_ZONE_*` | 독립 앱 주소 (미설정 시 로컬 dev 기본값) |
+
+## 로그인
+
+계정은 DB 없이 `DASH_USERS` 환경변수로만 관리한다.
+
+```
+DASH_USERS=yogico:비밀번호, design:sha256:9f86d08…, staff:비밀번호
+```
+
+- 비밀번호는 **평문 또는 `sha256:<hex>`** 를 쓴다. 해시는 `npm run hash -- <비밀번호>` 로 만든다.
+- **계정 철회는 그 줄을 빼면 끝**이다. 누가 로그인했는지는 세션에 남고 사이드바 하단에 표시된다.
+- 없는 아이디와 틀린 비밀번호는 **같은 메시지·같은 지연**으로 응답한다(계정 존재 여부가 새지 않게).
+- `DASH_USERS` 를 비우면 기존 `DASH_PASSWORD` 단일 비밀번호 모드로 동작한다(아이디 칸이 사라진다).
+
+세션은 HMAC-SHA256 서명 쿠키(12시간)다. Web Crypto만 써서 Edge(proxy)와 Node 양쪽에서 검증된다.
 
 ## 화면 구성
 

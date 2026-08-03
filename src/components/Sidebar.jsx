@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { GROUPS } from '@/lib/links';
 import { useEmbed } from './EmbedModal';
@@ -8,6 +9,14 @@ import { useEmbed } from './EmbedModal';
 export default function Sidebar() {
   const pathname = usePathname();
   const { open } = useEmbed();
+  const [me, setMe] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((j) => setMe(j.id))
+      .catch(() => {});
+  }, []);
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -64,9 +73,12 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <button type="button" className="sb-logout" onClick={logout}>
-        로그아웃
-      </button>
+      <div className="sb-foot">
+        {me && <span className="sb-me" title={`${me} 님으로 로그인`}>{me}</span>}
+        <button type="button" className="sb-logout" onClick={logout}>
+          로그아웃
+        </button>
+      </div>
     </aside>
   );
 }
