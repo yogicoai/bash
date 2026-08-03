@@ -37,18 +37,16 @@ export const GROUPS = [
       {
         name: 'Y리그 현황',
         href: '/yleague/status',
-        status: 'planned',
-        phase: 3,
+        status: 'ready',
         desc: '좌수왕·캐스트·스토어 3종목',
-        source: 'realtime · jwasu/dashboard',
+        source: 'realtime · jwasu/dashboard + orders + managers',
       },
       {
         name: 'Y리그 누적랭킹',
         href: '/yleague/ranking',
-        status: 'planned',
-        phase: 3,
-        desc: '누적 순위',
-        source: 'realtime · jwasu/dashboard',
+        status: 'ready',
+        desc: '월별 1등 누적 (달성/미달성)',
+        source: 'realtime · 월별 dashboard + orders',
       },
       {
         name: '재고관리',
