@@ -16,9 +16,8 @@ export const GROUPS = [
       {
         name: '창고재고',
         href: '/stock/warehouse',
-        status: 'planned',
-        phase: 1,
-        desc: '창고별 재고 현황',
+        status: 'ready',
+        desc: '매장별 창고 재고 현황',
         source: 'realtime · /api/warehouse-stock',
       },
       {

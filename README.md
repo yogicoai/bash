@@ -51,7 +51,7 @@ npm run dev        # http://localhost:5800
 | Phase | 대상 | 원본 | 비고 |
 |---|---|---|---|
 | 0 | 셸 · 로그인 · 홈 · 프록시 | — | ✅ 완료 |
-| 1 | 창고재고 | `deliveryOFF/창고재고.html` (20KB) | 파일럿 |
+| 1 | 창고재고 | `deliveryOFF/창고재고.html` (20KB) | ✅ 완료 — 이후 화면의 패턴 기준 |
 | 2 | 영업분석 · 매장별 판매분석 | (131KB + 134KB) | `onlineData/lib/offline.js` 재사용 |
 | 3 | Y리그 현황 · 누적랭킹 | (80KB + 29KB) | `onlineData/lib/jwasuLeague.js` 재사용 |
 | 4 | 재고관리 | (44KB) | offorder 스냅샷 연동 |
@@ -62,6 +62,30 @@ npm run dev        # http://localhost:5800
 
 - https://yogibo.kr/off/order/index.html
 - https://yogibo.kr/off/order/admin.html
+
+## 화면 만드는 패턴 (Phase 1에서 확정)
+
+```
+src/app/<경로>/page.jsx        서버 컴포넌트 — searchParams 파싱 후 PageShell로 감싼다
+src/app/<경로>/*.jsx           'use client' — 화면 로직
+src/lib/api.js                 rtGet / offGet — 프록시로만 나간다
+src/hooks/useAsync.js          { data, error, loading, reload }, skip 옵션 지원
+src/components/PageShell.jsx   홈 복귀 + 제목 + 액션
+src/components/DataState.jsx   로딩 / 에러 / 빈 상태
+```
+
+원천 API는 HTTP 200에 `{ success:false, message }`를 실어 보내는 경우가 있어서
+`api.js`가 이를 에러로 승격시킨다. 401이면 로그인으로 보낸다.
+
+## 창고재고 데이터 주의
+
+`/api/warehouse-stock`은 매장명(`store_tokens`의 키)을 이카운트 창고명과 이름 규칙으로 매칭한다.
+**2026-08-03 스냅샷 기준 28개 매장 중 10개만 매칭된다** — 나머지는 창고 스냅샷(`warehouse.stocks`)에
+해당 창고가 없어서 "매핑된 창고를 찾을 수 없습니다"가 뜬다. 원본 HTML도 동일하게 동작한다.
+화면 문제가 아니라 이카운트 적재 범위 문제다.
+
+매칭되는 매장: 롯데대구 · 롯데동탄 · 롯데안산 · 스타필드고양 · 스타필드하남 ·
+신세계센텀시티몰 · 현대미아 · 김포공항 롯데몰(= 롯데몰김포공항) · 신세계본점
 
 ## Phase 3 주의사항
 

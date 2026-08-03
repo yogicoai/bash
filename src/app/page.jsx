@@ -39,12 +39,18 @@ function Card({ item }) {
 }
 
 export default function HomePage() {
+  // 이관 진행률 — links.js의 status를 바꾸면 여기도 따라 움직인다.
+  const migrating = GROUPS.flatMap((g) => g.items).filter((i) => i.status !== 'external');
+  const done = migrating.filter((i) => i.status === 'ready').length;
+
   return (
     <main className="shell">
       <header className="topbar">
         <div className="brand">
           <h1>요기보 통합 대시보드</h1>
-          <span>Phase 0 — 셸</span>
+          <span>
+            이관 {done} / {migrating.length}
+          </span>
         </div>
         <LogoutButton />
       </header>
