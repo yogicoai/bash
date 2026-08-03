@@ -16,10 +16,16 @@ export const ZONES = {
   blog: env('NEXT_PUBLIC_ZONE_BLOG', 'https://blog-livid-sigma-32.vercel.app/'),
   b2b: env('NEXT_PUBLIC_ZONE_B2B', 'https://mktcr.vercel.app/send'),
   cs: env('NEXT_PUBLIC_ZONE_CS', 'https://cs-fawn-alpha.vercel.app/admin'),
+  evaluation: env('NEXT_PUBLIC_ZONE_EVALUATION', 'https://evaluation-xi-ten.vercel.app/'),
   design: env('NEXT_PUBLIC_ZONE_DESIGN', 'https://design-t-omega.vercel.app/'),
   /** 일일매출 리포트 — 날짜 파라미터가 필요해 열 때 오늘 날짜를 붙인다 */
   onlineReport: env('NEXT_PUBLIC_ZONE_ONLINE_REPORT', 'https://on-iota-three.vercel.app/api/report'),
 };
+
+/** MCP 엔드포인트와 헬스체크 — /data 안내와 서버사이드 확인에 함께 쓴다 */
+export const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL
+  || 'https://port-0-yogibo-onmcp-lzgmwhc4d9883c97.sel4.cloudtype.app/mcp';
+export const MCP_HEALTH_URL = MCP_URL.replace(/\/mcp$/, '/health');
 
 /** 한국 기준 오늘 (YYYY-MM-DD) — 리포트 날짜 파라미터용 */
 export function todayKST() {

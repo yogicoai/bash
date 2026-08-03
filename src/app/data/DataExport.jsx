@@ -5,6 +5,7 @@ import { rtGet } from '@/lib/api';
 import { useAsync } from '@/hooks/useAsync';
 import { DATASETS, download, rowsOf, toCsv } from '@/lib/exportSets';
 import { monthRange } from '@/hooks/useYLeague';
+import { MCP_URL } from '@/lib/zones';
 
 const MCP_TOOLS = [
   ['offline_sales', '오프라인 매장 매출 분석'],
@@ -17,8 +18,6 @@ const MCP_TOOLS = [
   ['delivery_status', '출고·배송 현황'],
   ['staff_schedule', '근무 일정'],
 ];
-
-const MCP_URL = 'https://port-0-yogibo-onmcp-lzgmwhc4d9883c97.sel4.cloudtype.app/mcp';
 
 /** 원격(HTTP) — 서버가 이미 떠 있어 각자 설정만 넣으면 된다 */
 const CONFIG_REMOTE = `{
@@ -39,6 +38,44 @@ const CONFIG_LOCAL = `{
     }
   }
 }`;
+
+function CopyBlock({ label, code }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="copy-block">
+      <div className="copy-head">
+        <span>{label}</span>
+        <button
+          type="button"
+          className="btn btn-sm"
+          onClick={() => {
+            navigator.clipboard.writeText(code).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1600);
+            });
+          }}
+        >
+          {copied ? '복사됨 ✓' : '복사'}
+        </button>
+      </div>
+      <pre className="code-block">{code}</pre>
+    </div>
+  );
+}
+
+/** MCP 서버가 떠 있는지 — 프록시 없이 직접 확인한다(공개 헬스체크) */
+function McpHealth() {
+  const [state, setState] = useState('checking');
+  useEffect(() => {
+    // 대상 서버가 CORS 헤더를 주지 않아 브라우저에서 직접 못 부른다 → dash 서버가 대신 확인
+    fetch('/api/mcp-health', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((j) => setState(j.up ? 'up' : 'down'))
+      .catch(() => setState('down'));
+  }, []);
+  const label = state === 'up' ? '서버 정상' : state === 'down' ? '응답 없음' : '확인 중…';
+  return <span className={`health health-${state}`}>● {label}</span>;
+}
 
 export default function DataExport() {
   const [id, setId] = useState(DATASETS[0].id);
@@ -167,7 +204,10 @@ export default function DataExport() {
             <h2>채팅으로 확인하기 (MCP)</h2>
             <p>Claude에 데이터를 연결하면 화면을 열지 않고 대화로 물어볼 수 있습니다.</p>
           </div>
+          <div className="card-actions"><McpHealth /></div>
         </div>
+
+        <CopyBlock label="MCP 엔드포인트" code={MCP_URL} />
 
         <p className="summary">
           <b>onlineData</b>의 MCP 서버가 온라인·오프라인 데이터를 함께 노출합니다.
@@ -177,12 +217,12 @@ export default function DataExport() {
         <p className="summary" style={{ marginTop: 12 }}>
           <b>① 원격 (권장)</b> — 서버가 떠 있어 설정만 넣으면 됩니다. <code>MCP_TOKEN</code> 은 담당자에게 받으세요.
         </p>
-        <pre className="code-block">{CONFIG_REMOTE}</pre>
+        <CopyBlock label="Claude Desktop 설정 (원격)" code={CONFIG_REMOTE} />
 
         <p className="summary" style={{ marginTop: 12 }}>
           <b>② 로컬</b> — 본인 PC에 <code>onlineData</code> 저장소와 <code>.env</code> 가 있을 때.
         </p>
-        <pre className="code-block">{CONFIG_LOCAL}</pre>
+        <CopyBlock label="Claude Desktop 설정 (로컬)" code={CONFIG_LOCAL} />
 
         <p className="summary" style={{ marginTop: 14 }}>쓸 수 있는 도구 (일부)</p>
         <div className="table-wrap">

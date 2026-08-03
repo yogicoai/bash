@@ -45,7 +45,7 @@ export const GROUPS = [
       },
       {
         name: '매장직원 통합관리',
-        href: 'https://yogibo.kr/off/admin/index.html',
+        href: 'https://yogibo.kr/off/admin.html',
         slug: 'store-staff',
         icon: '👥',
         status: 'external',
@@ -67,22 +67,6 @@ export const GROUPS = [
         status: 'external',
         desc: '주문서 관리자 화면',
       },
-    ],
-  },
-  {
-    id: 'sales',
-    title: '영업',
-    icon: '📈',
-    desc: '판매 실적 분석과 매장 리그',
-    items: [
-      {
-        name: '영업분석',
-        href: '/sales/analysis',
-        icon: '📊',
-        status: 'ready',
-        desc: '기간별 매출·판매 분석 · 탭 10종',
-        source: 'realtime · orders / months / jwasu-table',
-      },
       {
         name: 'Y리그 현황',
         href: '/yleague/status',
@@ -102,10 +86,35 @@ export const GROUPS = [
     ],
   },
   {
+    id: 'sales',
+    title: '영업',
+    icon: '📈',
+    desc: '판매 실적 분석',
+    items: [
+      {
+        name: '영업분석',
+        href: '/sales/analysis',
+        icon: '📊',
+        status: 'ready',
+        desc: '기간별 매출·판매 분석 · 탭 10종',
+        source: 'realtime · orders / months / jwasu-table',
+      },
+      {
+        name: '수습직원 평가',
+        href: ZONES.evaluation,
+        slug: 'zone-evaluation',
+        icon: '📝',
+        status: 'external',
+        desc: '수습직원 시험 + 종합평가 (인사·매출·역량)',
+        source: 'evaluation · Next',
+      },
+    ],
+  },
+  {
     id: 'online',
     icon: '🛒',
     title: '온라인',
-    desc: 'Cafe24 · 스마트스토어 판매',
+    desc: 'Cafe24 · 스마트스토어(실시간 API) + 외부몰(이카운트 매출) 기반',
     items: [
       {
         name: '온라인 판매분석',
