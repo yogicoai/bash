@@ -33,7 +33,7 @@ export default function Sidebar() {
           <img src="/logo.png" alt="YOGI CORPORATION" />
         </span>
         <span className="sb-brand-text">
-          Yogibo
+          요기코퍼레이션
           <small>통합 대시보드</small>
         </span>
       </Link>

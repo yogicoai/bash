@@ -1,7 +1,7 @@
 import PageShell from '@/components/PageShell';
 import WarehouseStock from './WarehouseStock';
 
-export const metadata = { title: '매장 창고재고 · 요기보 통합 대시보드' };
+export const metadata = { title: '매장 창고재고 · 요기코퍼레이션' };
 
 export default async function WarehouseStockPage({ searchParams }) {
   const sp = await searchParams;

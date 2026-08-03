@@ -18,6 +18,10 @@ export const ZONES = {
   cs: env('NEXT_PUBLIC_ZONE_CS', 'https://cs-fawn-alpha.vercel.app/admin'),
   evaluation: env('NEXT_PUBLIC_ZONE_EVALUATION', 'https://evaluation-xi-ten.vercel.app/'),
   design: env('NEXT_PUBLIC_ZONE_DESIGN', 'https://design-t-omega.vercel.app/'),
+  priceImg: env('NEXT_PUBLIC_ZONE_PRICE_IMG', 'https://vmd-img.vercel.app/'),
+  nameCard: env('NEXT_PUBLIC_ZONE_NAMECARD', 'https://card-six-zeta.vercel.app/'),
+  video: env('NEXT_PUBLIC_ZONE_VIDEO', 'https://video-nine-nu.vercel.app/'),
+  warehouse: env('NEXT_PUBLIC_ZONE_WAREHOUSE', 'https://vmd-whouse.vercel.app/'),
   /** 일일매출 리포트 — 날짜 파라미터가 필요해 열 때 오늘 날짜를 붙인다 */
   onlineReport: env('NEXT_PUBLIC_ZONE_ONLINE_REPORT', 'https://on-iota-three.vercel.app/api/report'),
 };

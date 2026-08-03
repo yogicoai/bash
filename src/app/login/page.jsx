@@ -10,7 +10,9 @@ export default async function LoginPage({ searchParams }) {
   return (
     <main className="login-wrap">
       <div className="login-card">
-        <h1>요기보 통합 대시보드</h1>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="YOGI CORPORATION" className="login-logo" />
+        <h1>통합 대시보드</h1>
         <p className="sub">사내 전용입니다.</p>
         <LoginForm next={next} multiUser={isMultiUser()} />
       </div>

@@ -1,7 +1,7 @@
 import PageShell from '@/components/PageShell';
 import StockCenter from './StockCenter';
 
-export const metadata = { title: '물류센터 재고 · 요기보 통합 대시보드' };
+export const metadata = { title: '물류센터 재고 · 요기코퍼레이션' };
 
 export default function StockCenterPage() {
   return (

@@ -11,7 +11,7 @@ export default function HomePage() {
     <main className="shell">
       <header className="page-head">
         <div>
-          <h1>요기보 통합 대시보드</h1>
+          <h1>요기코퍼레이션 통합 대시보드</h1>
           <p>오프라인·영업·온라인·마케팅·B2B·CS 데이터를 한곳에서</p>
         </div>
         <div className="actions">

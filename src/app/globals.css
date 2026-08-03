@@ -622,3 +622,4 @@ button.card { text-align: left; font-family: inherit; color: var(--text); cursor
 .health-up { color: var(--good); }
 .health-down { color: var(--bad); }
 .health-checking { color: var(--muted); }
+.login-logo { width: 168px; height: auto; display: block; margin: 0 0 18px; }
