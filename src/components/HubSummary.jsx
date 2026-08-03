@@ -15,7 +15,9 @@ import { buildRawOrders } from '@/lib/sales/normalize';
  *
  * 실시간으로 볼 수 있는 범위만 얹는다.
  *   오프라인 : 매장 전체 (이카운트 10분 주기)   realtime /api/orders
- *   온라인   : Cafe24 · 스마트스토어            onlineData /api/cafe24/daily-summary (당월 누적)
+ *   온라인   : Cafe24  onlineData /api/cafe24/daily-summary (당월 누적)
+ *              스마트스토어 onlineData /api/smartstore/analysis (당월 1일~오늘)
+ * ※ /api/sync-today · /api/refresh-today 는 동기화 작업을 실행시키는 엔드포인트라 여기서 부르지 않는다.
  * 외부몰(쿠팡·오늘의집 등)은 이카운트 일 단위라 여기 넣지 않는다 — 넣으면 당월 초에 0으로 보인다.
  *
  * 새 백엔드 없이 각 화면이 이미 쓰는 API를 그대로 재사용한다.
@@ -45,11 +47,21 @@ export default function HubSummary() {
     return { month, amount, oc: orders.length, aov: orders.length ? amount / orders.length : 0, todayAmount, todayOrders };
   }, []);
 
-  const online = useAsync(async () => {
+  // Cafe24 — 당월 누적
+  const cafe24 = useAsync(async () => {
     const json = await onGet('api/cafe24/daily-summary', { date: todayKST() });
     const mtd = json?.mtd;
     if (!mtd) return null;
-    return { revenue: mtd.revenue, orders: mtd.orders, aov: mtd.aov, basis: mtd.basis, month: json.monthStart?.slice(0, 7) };
+    return { revenue: mtd.revenue, orders: mtd.orders, month: json.monthStart?.slice(0, 7) };
+  }, []);
+
+  // 스마트스토어 — 당월 1일 ~ 오늘
+  const smartstore = useAsync(async () => {
+    const today = todayKST();
+    const json = await onGet('api/smartstore/analysis', { start: `${today.slice(0, 7)}-01`, end: today });
+    const k = json?.kpis;
+    if (!k) return null;
+    return { revenue: k.revenue, orders: k.orders, month: today.slice(0, 7) };
   }, []);
 
   const tiles = [
@@ -73,10 +85,18 @@ export default function HubSummary() {
     {
       href: 'https://on-iota-three.vercel.app/',
       external: true,
-      label: online.data ? `${(online.data.month || '').slice(5)}월 매출 (온라인)` : '월별 매출 (온라인)',
-      value: online.data ? won(online.data.revenue) : null,
-      sub: online.data ? `Cafe24 기준 · 주문 ${fmt(online.data.orders)}건` : null,
-      state: online,
+      label: cafe24.data ? `${(cafe24.data.month || '').slice(5)}월 매출 (자사몰)` : '월별 매출 (자사몰)',
+      value: cafe24.data ? won(cafe24.data.revenue) : null,
+      sub: cafe24.data ? `Cafe24 · 주문 ${fmt(cafe24.data.orders)}건` : null,
+      state: cafe24,
+    },
+    {
+      href: 'https://on-iota-three.vercel.app/',
+      external: true,
+      label: smartstore.data ? `${(smartstore.data.month || '').slice(5)}월 매출 (스마트스토어)` : '월별 매출 (스마트스토어)',
+      value: smartstore.data ? won(smartstore.data.revenue) : null,
+      sub: smartstore.data ? `네이버 · 주문 ${fmt(smartstore.data.orders)}건` : null,
+      state: smartstore,
     },
   ];
 
