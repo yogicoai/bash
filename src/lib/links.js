@@ -23,17 +23,15 @@ export const GROUPS = [
       {
         name: '영업분석',
         href: '/sales/analysis',
-        status: 'planned',
-        phase: 2,
-        desc: '기간별 매출·판매 분석',
+        status: 'ready',
+        desc: '기간별 매출·판매 분석 (EPP 별도 분류)',
         source: 'realtime · orders / months / jwasu-table',
       },
       {
         name: '매장별 판매분석',
         href: '/sales/by-store',
-        status: 'planned',
-        phase: 2,
-        desc: '매장 단위 판매 데이터',
+        status: 'ready',
+        desc: '같은 분석, EPP는 프리미엄에 합산',
         source: 'realtime · orders / months / jwasu-table',
       },
       {
