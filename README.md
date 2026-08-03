@@ -51,10 +51,10 @@ npm run dev        # http://localhost:5800
 | Phase | 대상 | 원본 | 비고 |
 |---|---|---|---|
 | 0 | 셸 · 로그인 · 홈 · 프록시 | — | ✅ 완료 |
-| 1 | 창고재고 | `deliveryOFF/창고재고.html` (20KB) | ✅ 완료 — 이후 화면의 패턴 기준 |
+| 1 | 매장 창고재고 | `deliveryOFF/창고재고.html` (20KB) | ✅ 완료 — 이후 화면의 패턴 기준 |
 | 2 | 영업분석 · 매장별 판매분석 | (131KB + 134KB) | ✅ 완료 — 원본 2개가 20줄만 달라 화면 1개 + 설정 2벌로 통합 |
 | 3 | Y리그 현황 · 누적랭킹 | (80KB + 29KB) | ✅ 완료 — 보정 규칙을 `lib/yleague/rules.js`로 회수 |
-| 4 | 재고관리 | (44KB) | offorder 스냅샷 연동 |
+| 4 | 물류센터 재고 | `deliveryOFF/재고관리.html` (44KB) | offorder 스냅샷 연동 |
 | 5 | 주간보고 | (246KB) | 앞 단계 재사용으로 축소 |
 | 6 | 나머지 앱 zone 연결 | onlineData · mkboard · BlogData · mktCl · cs | `next.config.js` rewrites |
 
@@ -97,7 +97,16 @@ src/components/DataState.jsx   로딩 / 에러 / 빈 상태
 - CVR = 구매건수 ÷ 방문수(`/api/jwasu/table`의 count 합)
 - 매장 리포트의 월 추세는 최근 월이 부분월이면 직전 월도 같은 일자까지만 잘라 비교
 
-## 창고재고 데이터 주의
+## 재고 화면 두 개는 대상이 다르다
+
+원본 파일명(`창고재고.html` / `재고관리.html`)만 봐선 구분이 안 돼서 이름을 바꿨다.
+
+| dash 화면 | 대상 | 원본 |
+|---|---|---|
+| **매장 창고재고** (`/stock/warehouse`) | 매장 뒤 창고 — 매장별로 조회 | `창고재고.html` |
+| **물류센터 재고** (`/stock/center`) | 물류센터 창고 — 카테고리별 + 일자별 스냅샷 | `재고관리.html` |
+
+## 매장 창고재고 데이터 주의
 
 `/api/warehouse-stock`은 매장명(`store_tokens`의 키)을 이카운트 창고명과 이름 규칙으로 매칭한다.
 **2026-08-03 스냅샷 기준 28개 매장 중 10개만 매칭된다** — 나머지는 창고 스냅샷(`warehouse.stocks`)에

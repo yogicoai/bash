@@ -39,9 +39,10 @@ function Card({ item }) {
 }
 
 export default function HomePage() {
-  // 이관 진행률 — links.js의 status를 바꾸면 여기도 따라 움직인다.
-  const migrating = GROUPS.flatMap((g) => g.items).filter((i) => i.status !== 'external');
-  const done = migrating.filter((i) => i.status === 'ready').length;
+  // 진행률 — links.js의 status를 바꾸면 여기도 따라 움직인다.
+  // 외부 링크는 dash가 띄우는 화면이 아니므로 분모에서 뺀다.
+  const inDash = GROUPS.flatMap((g) => g.items).filter((i) => i.status !== 'external');
+  const done = inDash.filter((i) => i.status === 'ready').length;
 
   return (
     <main className="shell">
@@ -49,7 +50,7 @@ export default function HomePage() {
         <div className="brand">
           <h1>요기보 통합 대시보드</h1>
           <span>
-            이관 {done} / {migrating.length}
+            사용 가능 {done} / {inDash.length}
           </span>
         </div>
         <LogoutButton />
