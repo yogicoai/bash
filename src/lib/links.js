@@ -14,32 +14,54 @@ export const GROUPS = [
   {
     id: 'offline',
     title: '오프라인',
-    desc: '매장·물류 재고와 주문서',
+    icon: '🏬',
+    desc: '매장 재고와 오프라인 운영 시스템',
     items: [
       {
         name: '매장 창고재고',
         href: '/stock/warehouse',
+        icon: '📦',
         status: 'ready',
         desc: '매장 뒤 창고의 재고 현황 (매장별)',
         source: 'realtime · /api/warehouse-stock',
       },
       {
         name: '물류센터 재고',
-        href: '/stock/center',
-        status: 'planned',
-        phase: 4,
-        desc: '물류센터 창고 재고 · 카테고리별 + 일자별 스냅샷',
-        source: 'realtime · stock/:category + offorder · snapshot',
+        href: 'https://yogibo.kr/off/stock/index.html',
+        slug: 'stock-center',
+        icon: '🏭',
+        status: 'external',
+        desc: '물류센터 창고 재고 관리',
+      },
+      {
+        name: '오프라인 관리시스템',
+        href: 'https://yogibo.kr/off/index.html',
+        slug: 'offline-admin',
+        icon: '📋',
+        status: 'external',
+        desc: '주간보고 통합관리 · 오프라인 매장 매출 관리',
+      },
+      {
+        name: '매장직원 통합관리',
+        href: 'https://yogibo.kr/off/admin/index.html',
+        slug: 'store-staff',
+        icon: '👥',
+        status: 'external',
+        desc: '오프라인 매장 매니저 통합관리센터',
       },
       {
         name: '오프라인 주문서',
         href: 'https://yogibo.kr/off/order/index.html',
+        slug: 'order',
+        icon: '🧾',
         status: 'external',
         desc: '매장용 주문서 · Cafe24 상품·쿠폰 API 연동',
       },
       {
         name: '주문서 관리자',
         href: 'https://yogibo.kr/off/order/admin.html',
+        slug: 'order-admin',
+        icon: '⚙️',
         status: 'external',
         desc: '주문서 관리자 화면',
       },
@@ -48,11 +70,13 @@ export const GROUPS = [
   {
     id: 'sales',
     title: '영업',
+    icon: '📈',
     desc: '판매 실적 분석과 매장 리그',
     items: [
       {
         name: '영업분석',
         href: '/sales/analysis',
+        icon: '📊',
         status: 'ready',
         desc: '기간별 매출·판매 분석 (EPP 별도 분류)',
         source: 'realtime · orders / months / jwasu-table',
@@ -60,6 +84,7 @@ export const GROUPS = [
       {
         name: '매장별 판매분석',
         href: '/sales/by-store',
+        icon: '🏪',
         status: 'ready',
         desc: '같은 분석, EPP는 프리미엄에 합산',
         source: 'realtime · orders / months / jwasu-table',
@@ -67,6 +92,7 @@ export const GROUPS = [
       {
         name: 'Y리그 현황',
         href: '/yleague/status',
+        icon: '🏆',
         status: 'ready',
         desc: '좌수왕·캐스트·스토어 3종목',
         source: 'realtime · jwasu/dashboard + orders + managers',
@@ -74,28 +100,23 @@ export const GROUPS = [
       {
         name: 'Y리그 누적랭킹',
         href: '/yleague/ranking',
+        icon: '🥇',
         status: 'ready',
         desc: '월별 1등 누적 (달성/미달성)',
         source: 'realtime · 월별 dashboard + orders',
-      },
-      {
-        name: '주간보고',
-        href: '/weekly',
-        status: 'planned',
-        phase: 5,
-        desc: '주간 종합 보고 (가장 큼)',
-        source: 'realtime 전반 + offorder · work-hours',
       },
     ],
   },
   {
     id: 'online',
+    icon: '🛒',
     title: '온라인',
     desc: 'Cafe24 · 스마트스토어 판매',
     items: [
       {
         name: '온라인 판매분석',
         href: '/online',
+        icon: '🛍️',
         status: 'planned',
         phase: 6,
         desc: '유입·회원/비회원·쿠폰 프로모션 분석',
@@ -105,12 +126,14 @@ export const GROUPS = [
   },
   {
     id: 'marketing',
+    icon: '📣',
     title: '마케팅',
     desc: '광고 집행과 콘텐츠 성과',
     items: [
       {
         name: '광고 통합',
         href: '/marketing/ads',
+        icon: '📢',
         status: 'planned',
         phase: 6,
         desc: '네이버SA · META · 카카오모먼트 + 유입·매출(UTM)',
@@ -119,6 +142,7 @@ export const GROUPS = [
       {
         name: '블로그 통계',
         href: '/marketing/blog',
+        icon: '📝',
         status: 'planned',
         phase: 6,
         desc: '네이버 블로그 통계 시각화',
@@ -128,12 +152,14 @@ export const GROUPS = [
   },
   {
     id: 'b2b',
+    icon: '🤝',
     title: 'B2B',
     desc: '기업 대상 영업·마케팅',
     items: [
       {
         name: 'B2B 메일 마케팅',
         href: '/b2b',
+        icon: '📧',
         status: 'planned',
         phase: 6,
         desc: '키워드 크롤링 → AI 검증 → 승인 → 발송',
@@ -143,12 +169,14 @@ export const GROUPS = [
   },
   {
     id: 'cs',
+    icon: '💬',
     title: 'CS',
     desc: '고객 응대',
     items: [
       {
         name: 'CS 셀프가이드',
         href: '/cs',
+        icon: '🎧',
         status: 'planned',
         phase: 6,
         desc: '상담 응대 가이드',

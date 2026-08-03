@@ -74,7 +74,7 @@ export default function StoreReport({ rows, rawOrders, storeVisits, months, meta
     try {
       const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(captureRef.current, {
-        backgroundColor: getComputedStyle(document.body).getPropertyValue('--panel')?.trim() || '#171b22',
+        backgroundColor: '#f8fafc',
         scale: 2,
       });
       const a = document.createElement('a');

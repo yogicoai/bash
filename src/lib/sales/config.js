@@ -9,12 +9,13 @@
 
 export const CATEGORY_ORDER = ['소파', '바디필로우', '리빙', '케어', '키즈', '기타'];
 
+// 라이트 배경 기준 — 원본 HTML의 팔레트를 그대로 쓴다
 export const CATEGORY_PALETTE = {
-  소파: '#6366f1',
-  바디필로우: '#22d3ee',
+  소파: '#4f46e5',
+  바디필로우: '#06b6d4',
   리빙: '#f59e0b',
-  케어: '#34d399',
-  키즈: '#a78bfa',
+  케어: '#10b981',
+  키즈: '#8b5cf6',
   기타: '#94a3b8',
 };
 
@@ -44,34 +45,34 @@ const BASE_COLOR_EXCLUDE = [
 
 /** 색상명 → 스와치 (대표 색만) */
 const COLOR_SWATCH = [
-  [/(블랙|black|검)/i, '#1f2937'], [/(화이트|white|흰)/i, '#e2e8f0'],
-  [/(그레이|gray|grey|회)/i, '#9ca3af'], [/(차콜|charcoal)/i, '#4b5563'],
-  [/(네이비|navy|남색)/i, '#1e40af'], [/(블루|blue|파랑|하늘)/i, '#3b82f6'],
+  [/(블랙|black|검)/i, '#1f2937'], [/(화이트|white|흰)/i, '#f1f5f9'],
+  [/(그레이|gray|grey|회)/i, '#9ca3af'], [/(차콜|charcoal)/i, '#374151'],
+  [/(네이비|navy|남색)/i, '#1e3a8a'], [/(블루|blue|파랑|하늘)/i, '#3b82f6'],
   [/(레드|red|빨강|와인|버건디)/i, '#dc2626'], [/(핑크|pink|분홍|로즈)/i, '#ec4899'],
   [/(퍼플|purple|보라|라벤더)/i, '#8b5cf6'], [/(그린|green|초록|민트|올리브|카키)/i, '#16a34a'],
   [/(옐로|yellow|노랑|머스타드)/i, '#eab308'], [/(오렌지|orange|주황|코랄)/i, '#f97316'],
-  [/(브라운|brown|갈색|모카|카멜|탄)/i, '#a16207'], [/(베이지|beige|아이보리|크림|샌드)/i, '#d6c3a5'],
+  [/(브라운|brown|갈색|모카|카멜|탄)/i, '#92400e'], [/(베이지|beige|아이보리|크림|샌드)/i, '#e7d8c0'],
   [/(실버|silver)/i, '#cbd5e1'],
 ];
 
 export function colorSwatch(name) {
   const n = String(name || '');
   for (const [re, hex] of COLOR_SWATCH) if (re.test(n)) return hex;
-  return '#64748b';
+  return '#cbd5e1';
 }
 
 export const KPI_LINES = [
-  { key: 'setR', label: '세트구매율', color: '#818cf8', fmt: (v) => v.toFixed(1) + '%' },
-  { key: 'coverR', label: '커버구매율', color: '#22d3ee', fmt: (v) => v.toFixed(1) + '%' },
-  { key: 'cvr', label: 'CVR', color: '#fb7185', fmt: (v) => v.toFixed(1) + '%' },
-  { key: 'aov', label: '객단가', color: '#34d399', fmt: (v) => Math.round(v).toLocaleString() + '원' },
+  { key: 'setR', label: '세트구매율', color: '#4f46e5', fmt: (v) => v.toFixed(1) + '%' },
+  { key: 'coverR', label: '커버구매율', color: '#06b6d4', fmt: (v) => v.toFixed(1) + '%' },
+  { key: 'cvr', label: 'CVR', color: '#f43f5e', fmt: (v) => v.toFixed(1) + '%' },
+  { key: 'aov', label: '객단가', color: '#10b981', fmt: (v) => Math.round(v).toLocaleString() + '원' },
 ];
 
 const FILL_PALETTE_FULL = {
-  스탠다드: '#22d3ee',
+  스탠다드: '#06b6d4',
   프리미엄: '#f59e0b',
-  프리미엄EPP: '#34d399',
-  프리미엄플러스: '#a78bfa',
+  프리미엄EPP: '#10b981',
+  프리미엄플러스: '#8b5cf6',
   기타: '#94a3b8',
 };
 

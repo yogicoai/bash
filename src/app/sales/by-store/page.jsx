@@ -5,7 +5,7 @@ export const metadata = { title: '매장별 판매분석 · 요기보 통합 대
 
 export default function SalesByStorePage() {
   return (
-    <PageShell title="매장별 판매분석" wide>
+    <PageShell title="매장별 판매분석">
       <SalesDashboard variantKey="byStore" />
     </PageShell>
   );

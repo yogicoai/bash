@@ -94,7 +94,7 @@ export default function YLeagueStatus() {
     try {
       const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(captureRef.current, {
-        backgroundColor: '#0e1014',
+        backgroundColor: '#f8fafc',
         scale: 2,
         useCORS: true,
       });

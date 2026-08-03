@@ -5,7 +5,7 @@ export const metadata = { title: 'Y리그 누적랭킹 · 요기보 통합 대�
 
 export default function YLeagueRankingPage() {
   return (
-    <PageShell title="Y리그 누적랭킹" wide>
+    <PageShell title="Y리그 누적랭킹">
       <YLeagueRanking />
     </PageShell>
   );

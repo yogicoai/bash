@@ -1,70 +1,34 @@
-import LogoutButton from './LogoutButton';
+import DashCard from '@/components/DashCard';
 import { GROUPS } from '@/lib/links';
-
-const TAG = {
-  ready: { cls: 'tag-ready', label: '사용 가능' },
-  external: { cls: 'tag-external', label: '외부 링크' },
-  planned: { cls: 'tag-planned', label: '준비 중' },
-};
-
-function Card({ item }) {
-  const tag = TAG[item.status] ?? TAG.planned;
-  const clickable = item.status === 'ready' || item.status === 'external';
-
-  const body = (
-    <>
-      <div className="card-title">
-        <strong>{item.name}</strong>
-        <span className={`tag ${tag.cls}`}>
-          {item.status === 'planned' && item.phase ? `Phase ${item.phase}` : tag.label}
-        </span>
-      </div>
-      {item.desc && <div className="card-desc">{item.desc}</div>}
-      {item.source && <div className="card-source">{item.source}</div>}
-    </>
-  );
-
-  if (!clickable) return <div className="card card-muted">{body}</div>;
-
-  const external = item.status === 'external';
-  return (
-    <a
-      className="card card-link"
-      href={item.href}
-      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-    >
-      {body}
-    </a>
-  );
-}
 
 export default function HomePage() {
   // 진행률 — links.js의 status를 바꾸면 여기도 따라 움직인다.
-  // 외부 링크는 dash가 띄우는 화면이 아니므로 분모에서 뺀다.
   const inDash = GROUPS.flatMap((g) => g.items).filter((i) => i.status !== 'external');
   const done = inDash.filter((i) => i.status === 'ready').length;
 
   return (
     <main className="shell">
-      <header className="topbar">
-        <div className="brand">
+      <header className="page-head">
+        <div>
           <h1>요기보 통합 대시보드</h1>
-          <span>
-            사용 가능 {done} / {inDash.length}
-          </span>
+          <p>오프라인·영업·온라인·마케팅·B2B·CS 데이터를 한곳에서</p>
         </div>
-        <LogoutButton />
+        <span className="badge">
+          dash 화면 {done} / {inDash.length}
+        </span>
       </header>
 
       {GROUPS.map((group) => (
         <section className="group" key={group.id}>
           <div className="group-head">
-            <h2>{group.title}</h2>
+            <h2>
+              {group.icon} {group.title}
+            </h2>
             <p>{group.desc}</p>
           </div>
           <div className="grid">
             {group.items.map((item) => (
-              <Card key={item.name} item={item} />
+              <DashCard key={item.name} item={item} />
             ))}
           </div>
         </section>

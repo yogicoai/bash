@@ -111,8 +111,8 @@ export default function SalesDashboard({ variantKey }) {
     const map = {
       sofa: { eyebrow: '소파 구매 상세', title: '소파 구매 · 제품·월별', color: categoryColor('소파'), rows: filtered.filter((r) => r.category === '소파'), groupLabel: '충전재', monthly: true },
       bp: { eyebrow: '바디필로우 구매 상세', title: '바디필로우 · 제품·월별', color: categoryColor('바디필로우'), rows: filtered.filter((r) => r.category === '바디필로우'), groupLabel: '충전재', monthly: true },
-      set: { eyebrow: '세트 구매 상세', title: '세트 구매 · 인기 구성 제품·월별', color: '#f472b6', rows: filtered.filter((r) => r.orderHasSet), groupLabel: '카테고리', monthly: true, countMode: 'order' },
-      cover: { eyebrow: '커버 동시 구매 상세', title: '커버 동시 구매 · 인기 제품·월별', color: '#22d3ee', rows: filtered.filter((r) => r.orderHasCover), groupLabel: '카테고리', monthly: true, countMode: 'order' },
+      set: { eyebrow: '세트 구매 상세', title: '세트 구매 · 인기 구성 제품·월별', color: '#be185d', rows: filtered.filter((r) => r.orderHasSet), groupLabel: '카테고리', monthly: true, countMode: 'order' },
+      cover: { eyebrow: '커버 동시 구매 상세', title: '커버 동시 구매 · 인기 제품·월별', color: '#0891b2', rows: filtered.filter((r) => r.orderHasCover), groupLabel: '카테고리', monthly: true, countMode: 'order' },
     };
     if (map[type]) openDetail(map[type]);
   };
@@ -124,9 +124,9 @@ export default function SalesDashboard({ variantKey }) {
     const map = {
       sofa: { eyebrow: `${store} · 소파`, title: '소파 구매 · 제품·월별', color: categoryColor('소파'), rows: base.filter((r) => r.category === '소파'), groupLabel: '충전재', monthly: true },
       bp: { eyebrow: `${store} · 바디필로우`, title: '바디필로우 · 제품·월별', color: categoryColor('바디필로우'), rows: base.filter((r) => r.category === '바디필로우'), groupLabel: '충전재', monthly: true },
-      set: { eyebrow: `${store} · 세트 구매`, title: '세트 구매 · 인기 구성 제품·월별', color: '#f472b6', rows: base.filter((r) => r.orderHasSet), groupLabel: '카테고리', monthly: true, countMode: 'order' },
-      cover: { eyebrow: `${store} · 커버 동시구매`, title: '커버 동시 구매 · 인기 제품·월별', color: '#22d3ee', rows: base.filter((r) => r.orderHasCover), groupLabel: '카테고리', monthly: true, countMode: 'order' },
-      all: { eyebrow: `${store} · 전체`, title: `${store} 전체 판매 · 제품·월별`, color: '#6366f1', rows: base, groupLabel: '카테고리', monthly: true },
+      set: { eyebrow: `${store} · 세트 구매`, title: '세트 구매 · 인기 구성 제품·월별', color: '#be185d', rows: base.filter((r) => r.orderHasSet), groupLabel: '카테고리', monthly: true, countMode: 'order' },
+      cover: { eyebrow: `${store} · 커버 동시구매`, title: '커버 동시 구매 · 인기 제품·월별', color: '#0891b2', rows: base.filter((r) => r.orderHasCover), groupLabel: '카테고리', monthly: true, countMode: 'order' },
+      all: { eyebrow: `${store} · 전체`, title: `${store} 전체 판매 · 제품·월별`, color: '#4f46e5', rows: base, groupLabel: '카테고리', monthly: true },
     };
     openDetail(map[type] || map.all);
   };
@@ -513,8 +513,8 @@ export default function SalesDashboard({ variantKey }) {
                 </div>
                 <div className="chips">
                   {[
-                    { key: 'all', label: '전체', color: '#6366f1', cnt: filtered.reduce((a, r) => a + r.qty, 0) },
-                    { key: 'main', label: '소파+바디필로우', color: '#22d3ee', cnt: (catQty['소파'] || 0) + (catQty['바디필로우'] || 0) },
+                    { key: 'all', label: '전체', color: '#4f46e5', cnt: filtered.reduce((a, r) => a + r.qty, 0) },
+                    { key: 'main', label: '소파+바디필로우', color: '#0891b2', cnt: (catQty['소파'] || 0) + (catQty['바디필로우'] || 0) },
                     ...visibleCats.map((c) => ({ key: c, label: c, color: categoryColor(c), cnt: catQty[c] })),
                   ].map((ch) => (
                     <button key={ch.key} type="button" className={`chip ${topMode === ch.key ? 'chip-on' : ''}`} onClick={() => setTopMode(ch.key)}>
@@ -802,9 +802,9 @@ function WeekdayPanel({ rows, mode, setMode }) {
             data={vals.map((v, i) => ({
               label: WEEKDAYS[i],
               value: v,
-              color: i === 0 || i === 6 ? '#fb7185' : '#6366f1',
+              color: i === 0 || i === 6 ? '#f43f5e' : '#4f46e5',
               emphasis: i === 0 || i === 6,
-              labelColor: i === 0 || i === 6 ? '#fb7185' : undefined,
+              labelColor: i === 0 || i === 6 ? '#f43f5e' : undefined,
             }))}
             yFormat={(v) => (mode === 'amount' ? `${Math.round(v / 10000)}만` : Math.round(v).toLocaleString())}
             valueFormat={fmt}

@@ -9,7 +9,7 @@ export default async function WarehouseStockPage({ searchParams }) {
   const store = typeof sp?.store === 'string' ? sp.store.trim() : '';
 
   return (
-    <PageShell title="매장 창고재고" wide>
+    <PageShell title="매장 창고재고">
       <WarehouseStock initialStore={store} />
     </PageShell>
   );

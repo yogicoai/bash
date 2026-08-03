@@ -49,7 +49,7 @@ export function BarChart({ data, height = 340, yFormat = (v) => Math.round(v).to
         return (
           <g key={d.label + i} onClick={clickable ? () => onBarClick(d, i) : undefined} style={clickable ? { cursor: 'pointer' } : undefined}>
             {clickable && <rect x={cx - slot / 2} y={padT} width={slot} height={innerH} fill="transparent" />}
-            <rect x={cx - barW / 2} y={y} width={barW} height={Math.max(h, 0)} rx={6} fill={d.color || '#6366f1'}>
+            <rect x={cx - barW / 2} y={y} width={barW} height={Math.max(h, 0)} rx={6} fill={d.color || '#4f46e5'}>
               {d.title && <title>{d.title}</title>}
             </rect>
             <text className={VAL} x={cx} y={y - 8} textAnchor="middle" pointerEvents="none">{fmt(d.value)}</text>
@@ -151,8 +151,8 @@ export function RankBarChart({ items, nameWidth = 290, rowH = 30, gradient = tru
       {gradient && (
         <defs>
           <linearGradient id="rankGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#22d3ee" />
-            <stop offset="100%" stopColor="#6366f1" />
+            <stop offset="0%" stopColor="#06b6d4" />
+            <stop offset="100%" stopColor="#4f46e5" />
           </linearGradient>
         </defs>
       )}
@@ -164,7 +164,7 @@ export function RankBarChart({ items, nameWidth = 290, rowH = 30, gradient = tru
         return (
           <g key={it.name + i}>
             <text x={18} y={cy + 4} fill={rank <= 3 ? '#fbbf24' : '#64748b'} fontWeight="800" fontSize="12">#{rank}</text>
-            {showSwatch && <circle cx={46} cy={cy} r={8} fill={it.color} stroke="rgba(255,255,255,.18)" strokeWidth="1" />}
+            {showSwatch && <circle cx={46} cy={cy} r={8} fill={it.color} stroke="rgba(15,23,42,.15)" strokeWidth="1" />}
             <text className={AXIS} x={padL - 12} y={cy + 4} textAnchor="end" fontWeight="600" fill="var(--text)">{label}</text>
             <rect
               x={padL}
@@ -322,7 +322,7 @@ export function Sparkline({ values, color, id }) {
 }
 
 /** 매장 리포트용 작은 월별 막대 */
-export function MiniBars({ labels, values, color = '#6366f1', height = 120, format = (v) => `${Math.round(v / 10000)}만` }) {
+export function MiniBars({ labels, values, color = '#4f46e5', height = 120, format = (v) => `${Math.round(v / 10000)}만` }) {
   if (!labels?.length) return <div className="chart-empty" style={{ minHeight: 120 }}>데이터 없음</div>;
   const W = 700, H = height, padL = 10, padR = 10, padT = 20, padB = 22;
   const innerW = W - padL - padR, innerH = H - padT - padB;

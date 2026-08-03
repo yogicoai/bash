@@ -31,7 +31,7 @@ export default function YLeagueRanking() {
     setSaving(true);
     try {
       const { default: html2canvas } = await import('html2canvas');
-      const canvas = await html2canvas(captureRef.current, { backgroundColor: '#0e1014', scale: 2, useCORS: true });
+      const canvas = await html2canvas(captureRef.current, { backgroundColor: '#f8fafc', scale: 2, useCORS: true });
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
       a.download = `Y리그_누적랭킹_${LEAGUE_YEAR}-${String(targetMonth).padStart(2, '0')}.png`;
