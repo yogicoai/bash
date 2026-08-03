@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAvailableMonths, useYLeagueStatus, monthRange } from '@/hooks/useYLeague';
 import { buildCast, buildJwasu, buildStore } from '@/lib/yleague/status';
 import { badgeImage, rateClass } from '@/lib/yleague/rules';
+import { useEmbed } from '@/components/EmbedModal';
 
 const TABS = [
   { key: 'jwasu', label: '좌수왕', hint: '목표 좌수 달성률', note: '직영 + 위탁 (매니저/부매니저/시니어/일급제/중간관리) | 목표 좌수 대비 달성률 높은 순' },
@@ -16,7 +17,16 @@ const EX_STORES_KEY = 'dash.yleague.excludedStores';
 const SEP = '|';
 const fmt = (n) => Number(n || 0).toLocaleString();
 
+/** 좌수 원자료를 넣는 도구 — 조회 화면이 아니라 입력이라 카드로 빼지 않고 여기 둔다 */
+const PREV_DATA = {
+  name: '좌수 일괄등록',
+  icon: '📤',
+  href: 'https://yogibo.kr/off/prevData.html',
+  desc: '매장 좌수 데이터 엑셀 업로드',
+};
+
 export default function YLeagueStatus() {
+  const { open } = useEmbed();
   const months = useAvailableMonths();
   const [searchType, setSearchType] = useState('month');
   const [month, setMonth] = useState('');
@@ -188,6 +198,9 @@ export default function YLeagueStatus() {
             </button>
             <button type="button" className="yl-btn yl-btn-purple" onClick={downloadImage} disabled={saving || loading || !list.length}>
               {saving ? '저장 중…' : '🖼 이미지'}
+            </button>
+            <button type="button" className="yl-btn" style={{ background: '#475569' }} onClick={() => open(PREV_DATA)}>
+              📤 좌수 일괄등록
             </button>
             <a className="yl-btn yl-btn-cyan" href="/yleague/ranking">매장/개인 누적 달성 현황</a>
           </div>
