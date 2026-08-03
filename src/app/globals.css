@@ -710,3 +710,8 @@ button.card { text-align: left; font-family: inherit; color: var(--text); cursor
 .hub-sub { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
 .hub-dim { color: var(--subtle); font-weight: 500; font-size: 17px; }
 .hub-warn .hub-value { color: var(--bad); }
+.hub-live { border-color: rgba(16,185,129,.45); }
+.hub-live .hub-label::before {
+  content: '●'; color: var(--good); margin-right: 5px; font-size: 9px; vertical-align: 1px;
+}
+.hub-live .hub-value { color: var(--good); }

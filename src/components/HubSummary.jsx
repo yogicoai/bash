@@ -7,7 +7,11 @@ import { isExcludedProduct, isExcludedStore } from '@/lib/sales/config';
 import { buildRawOrders } from '@/lib/sales/normalize';
 
 /**
- * 허브 요약 — 클릭하지 않고도 지금 상태가 보이게.
+ * 허브 요약 — 클릭하지 않고도 매출이 보이게. 지표는 매출만 둔다.
+ *
+ * 갱신 시점이 다르므로 라벨로 구분한다.
+ *   실시간 매출 = 오프라인 매장 당일 (이카운트 10분 주기)
+ *   월별 매출   = 매일 오전 10시 기준, 어제까지 반영된 누적
  *
  * 실시간으로 볼 수 있는 범위만 얹는다.
  *   오프라인 : 매장 전체 (이카운트 10분 주기)   realtime /api/orders
@@ -33,11 +37,12 @@ export default function HubSummary() {
     const orders = buildRawOrders(lines.map((o) => ({ ...o, amount: Number(o.amount || 0) })));
     const amount = lines.reduce((a, o) => a + Number(o.amount || 0), 0);
 
-    const byStore = new Map();
-    for (const o of lines) byStore.set(o.store, (byStore.get(o.store) || 0) + Number(o.amount || 0));
-    const [topStore, topAmount] = [...byStore.entries()].sort((a, b) => b[1] - a[1])[0] || [];
+    const today = todayKST();
+    const todayLines = lines.filter((o) => String(o.date || '').slice(0, 10) === today);
+    const todayAmount = todayLines.reduce((a, o) => a + Number(o.amount || 0), 0);
+    const todayOrders = buildRawOrders(todayLines).length;
 
-    return { month, amount, oc: orders.length, aov: orders.length ? amount / orders.length : 0, topStore, topAmount };
+    return { month, amount, oc: orders.length, aov: orders.length ? amount / orders.length : 0, todayAmount, todayOrders };
   }, []);
 
   const online = useAsync(async () => {
@@ -47,44 +52,31 @@ export default function HubSummary() {
     return { revenue: mtd.revenue, orders: mtd.orders, aov: mtd.aov, basis: mtd.basis, month: json.monthStart?.slice(0, 7) };
   }, []);
 
-  const stock = useAsync(async () => {
-    const raw = await rtGet('api/stock/전체');
-    const rows = (Array.isArray(raw) ? raw : []).filter(
-      (i) => i.category !== '제외' && !String(i.name || '').toUpperCase().includes('EPP'),
-    );
-    return { critical: rows.filter((i) => i.qty > 0 && i.qty <= 3).length, out: rows.filter((i) => i.qty <= 0).length };
-  }, []);
-
   const tiles = [
     {
       href: '/sales/analysis',
-      label: offline.data ? `${offline.data.month.slice(5)}월 오프라인 매출` : '오프라인 매출',
+      label: '실시간 매출 (오늘)',
+      value: offline.data ? won(offline.data.todayAmount) : null,
+      sub: offline.data
+        ? `오프라인 매장 당일 · 구매 ${fmt(offline.data.todayOrders)}건`
+        : null,
+      tone: 'live',
+      state: offline,
+    },
+    {
+      href: '/sales/analysis',
+      label: offline.data ? `${offline.data.month.slice(5)}월 매출 (오프라인)` : '월별 매출 (오프라인)',
       value: offline.data ? won(offline.data.amount) : null,
       sub: offline.data ? `구매 ${fmt(offline.data.oc)}건 · 객단가 ${won(offline.data.aov)}` : null,
       state: offline,
     },
     {
-      href: '/sales/analysis',
-      label: '오프라인 매출 1위 매장',
-      value: offline.data?.topStore || null,
-      sub: offline.data?.topStore ? won(offline.data.topAmount) : null,
-      state: offline,
-    },
-    {
       href: 'https://on-iota-three.vercel.app/',
       external: true,
-      label: online.data ? `${(online.data.month || '').slice(5)}월 온라인 매출` : '온라인 매출',
+      label: online.data ? `${(online.data.month || '').slice(5)}월 매출 (온라인)` : '월별 매출 (온라인)',
       value: online.data ? won(online.data.revenue) : null,
       sub: online.data ? `Cafe24 기준 · 주문 ${fmt(online.data.orders)}건` : null,
       state: online,
-    },
-    {
-      href: '/stock/center',
-      label: '물류센터 소진임박',
-      value: stock.data ? `${fmt(stock.data.critical)}건` : null,
-      sub: stock.data ? `수량 3개 이하 · 품절 ${fmt(stock.data.out)}건` : null,
-      tone: stock.data && stock.data.critical > 0 ? 'warn' : null,
-      state: stock,
     },
   ];
 
