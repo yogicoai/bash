@@ -562,3 +562,29 @@ button.card { text-align: left; font-family: inherit; color: var(--text); cursor
   background: #fffbeb; border-bottom: 1px solid #fde68a; flex-shrink: 0;
 }
 .embed-hint code { background: #fff; border: 1px solid #fde68a; padding: 1px 6px; border-radius: 4px; }
+
+/* ── 물류센터 재고 ── */
+.chip-warn { color: #c2410c; border-color: #fed7aa; }
+.chip-warn.chip-on { background: #f97316; border-color: #f97316; color: #fff; }
+.chip-bad { color: #b91c1c; border-color: #fecaca; }
+.chip-bad.chip-on { background: var(--bad); border-color: var(--bad); color: #fff; }
+.chip-sm { font-size: 11.5px; padding: 5px 10px; }
+.chips-detail { padding-left: 2px; }
+
+.pill-cover { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+.pill-inner { background: #fef9c3; color: #a16207; border-color: #fde68a; }
+.pill-doll { background: #fce7f3; color: #be185d; border-color: #fbcfe8; }
+.pill-living { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+.pill-safety { background: #ffedd5; color: #c2410c; border-color: #fed7aa; margin-left: 2px; }
+
+.row-out td { background: var(--panel-2) !important; color: var(--subtle); }
+.row-out .strong { color: var(--subtle); font-weight: 500; }
+.qty-ok { font-weight: 700; }
+.qty-safety { font-weight: 700; color: #ea580c; }
+.qty-critical { font-weight: 800; color: var(--bad); }
+.qty-out { font-weight: 400; color: var(--subtle); }
+
+.snap-count {
+  background: var(--accent-soft); color: #1d4ed8; font-size: 12.5px; font-weight: 600;
+  border-radius: 8px; padding: 10px 12px; text-align: center; margin: 4px 0 12px;
+}
