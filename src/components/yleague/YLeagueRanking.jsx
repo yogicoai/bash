@@ -16,7 +16,7 @@ const SECTIONS = [
 export default function YLeagueRanking() {
   const monthOptions = useCumulativeMonths();
   const [targetMonth, setTargetMonth] = useState(() => monthOptions[monthOptions.length - 1] || 1);
-  const { monthly, mgrMap, loading, error, progress, reload } = useYLeagueCumulative(targetMonth);
+  const { monthly, mgrMap, loading, error, progress, refresh } = useYLeagueCumulative(targetMonth);
   const captureRef = useRef(null);
   const [saving, setSaving] = useState(false);
 
@@ -53,7 +53,7 @@ export default function YLeagueRanking() {
                 <option key={m} value={m}>{LEAGUE_YEAR}년 {m}월 누적 조회</option>
               ))}
             </select>
-            <button type="button" className="yl-btn yl-btn-cyan" onClick={reload} disabled={loading}>
+            <button type="button" className="yl-btn yl-btn-cyan" onClick={refresh} disabled={loading}>
               {loading && progress.total ? `불러오는 중 ${progress.done}/${progress.total}` : '조회하기'}
             </button>
             <button type="button" className="yl-btn" style={{ background: '#2563eb' }} onClick={downloadImage} disabled={saving || loading}>

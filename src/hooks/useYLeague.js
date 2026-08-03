@@ -98,8 +98,16 @@ export function useYLeagueStatus(dates) {
 }
 
 /**
- * Y리그 누적 데이터 — 1월부터 targetMonth까지 월별로 대시보드+주문을 모은다.
- * 월 수만큼 요청이 나가므로(월당 2건) 진행률을 함께 돌려준다.
+ * 월별 원자료 캐시 — 한 번 받은 달은 다시 받지 않는다.
+ * 누적 집계 특성상 1월~선택월이 모두 필요하지만, 월을 바꿔도
+ * "아직 안 받은 달"만 추가로 가져온다. (8월→5월은 요청 0건)
+ */
+const monthCache = new Map();
+
+/**
+ * Y리그 누적 데이터 — 1월부터 targetMonth까지 월별 대시보드+주문.
+ * 누적 달성/미달성은 매달 1등을 뽑아 쌓는 값이라 이전 달들이 반드시 필요하다.
+ * 대신 캐시 덕분에 각 달은 최대 한 번만 호출된다.
  */
 export function useYLeagueCumulative(targetMonth) {
   const [monthly, setMonthly] = useState([]);
@@ -112,32 +120,36 @@ export function useYLeagueCumulative(targetMonth) {
   const load = useCallback(async () => {
     if (!targetMonth) return;
     const id = ++reqId.current;
-    setLoading(true);
+    const needed = [];
+    for (let m = 1; m <= targetMonth; m++) if (!monthCache.has(m)) needed.push(m);
+
     setError(null);
-    setProgress({ done: 0, total: targetMonth });
+    setProgress({ done: 0, total: needed.length });
+    setLoading(needed.length > 0);
+
     try {
       const map = await loadManagers();
       if (id !== reqId.current) return;
       setMgrMap(map);
 
       let done = 0;
-      const jobs = [];
-      for (let m = 1; m <= targetMonth; m++) {
-        const ym = `${LEAGUE_YEAR}-${pad(m)}`;
-        const { startDate, endDate } = monthRange(ym);
-        jobs.push(
-          Promise.all([
+      await Promise.all(
+        needed.map(async (m) => {
+          const ym = `${LEAGUE_YEAR}-${pad(m)}`;
+          const { startDate, endDate } = monthRange(ym);
+          const [dashboard, orders] = await Promise.all([
             rtGet('api/jwasu/dashboard', { searchType: 'month', month: ym, date: endDate, startDate, endDate }).catch(() => null),
             rtGet('api/orders', { store: 'all', searchType: 'month', month: ym, startDate, endDate }).catch(() => null),
-          ]).then(([dashboard, orders]) => {
-            if (id === reqId.current) setProgress({ done: ++done, total: targetMonth });
-            return { month: m, dashboard, orders };
-          }),
-        );
-      }
-      const results = await Promise.all(jobs);
+          ]);
+          monthCache.set(m, { month: m, dashboard, orders });
+          if (id === reqId.current) setProgress({ done: ++done, total: needed.length });
+        }),
+      );
       if (id !== reqId.current) return;
-      setMonthly(results.sort((a, b) => a.month - b.month));
+
+      const results = [];
+      for (let m = 1; m <= targetMonth; m++) if (monthCache.has(m)) results.push(monthCache.get(m));
+      setMonthly(results);
     } catch (e) {
       if (id === reqId.current) setError(e);
     } finally {
@@ -149,7 +161,13 @@ export function useYLeagueCumulative(targetMonth) {
     load();
   }, [load]);
 
-  return { monthly, mgrMap, loading, error, progress, reload: load };
+  /** 강제 새로고침 — 캐시를 비우고 다시 받는다 (조회하기 버튼) */
+  const refresh = useCallback(() => {
+    monthCache.clear();
+    load();
+  }, [load]);
+
+  return { monthly, mgrMap, loading, error, progress, reload: load, refresh };
 }
 
 /** 누적랭킹 월 선택지 — LEAGUE_YEAR 1월부터 (올해면 이번 달까지) */
