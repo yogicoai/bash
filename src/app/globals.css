@@ -723,3 +723,15 @@ button.card { text-align: left; font-family: inherit; color: var(--text); cursor
 .hub-tile { border-color: rgba(16,185,129,.35); }
 .hub-tile .hub-value { color: var(--good); }
 .live-badge { color: var(--good); border-color: rgba(16,185,129,.4); }
+.hub-stale { border-color: rgba(245,158,11,.5); }
+.hub-stale .hub-value { color: var(--warn); font-size: 19px; }
+button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width: 100%; }
+.hub-more { display: block; font-size: 11px; color: var(--accent); margin-top: 8px; font-weight: 600; }
+.hub-open { border-color: var(--accent); }
+.hub-detail {
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px; margin: -14px 0 28px; box-shadow: var(--shadow-sm); scroll-margin-top: 16px;
+}
+.hub-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.hub-detail-head h2 { font-size: 15.5px; margin: 0; font-weight: 700; }
+.hub-detail .hub { margin-bottom: 16px; }
