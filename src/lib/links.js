@@ -108,6 +108,14 @@ export const GROUPS = [
     desc: '판매 실적 분석',
     items: [
       {
+        name: '실시간 매장별 매출',
+        href: '/sales/today',
+        icon: '⚡',
+        status: 'ready',
+        desc: '오늘 하루 매장별 판매 · 10분마다 자동 갱신',
+        source: 'realtime · /api/orders',
+      },
+      {
         name: '영업분석',
         href: '/sales/analysis',
         icon: '📊',

@@ -7,7 +7,7 @@ import { isExcludedProduct, isExcludedStore } from '@/lib/sales/config';
 import { buildRawOrders } from '@/lib/sales/normalize';
 
 /**
- * 허브 요약 — 클릭하지 않고도 매출이 보이게. 지표는 매출만 둔다.
+ * 허브 요약 — 오늘 매출을 채널별로. 클릭하지 않고도 보이게 한다.
  *
  * 갱신 시점이 다르므로 라벨로 구분한다.
  *   실시간 매출 = 오프라인 매장 당일 (이카운트 10분 주기)
@@ -50,52 +50,46 @@ export default function HubSummary() {
   // Cafe24 — 당월 누적
   const cafe24 = useAsync(async () => {
     const json = await onGet('api/cafe24/daily-summary', { date: todayKST() });
-    const mtd = json?.mtd;
-    if (!mtd) return null;
-    return { revenue: mtd.revenue, orders: mtd.orders, month: json.monthStart?.slice(0, 7) };
+    const d = json?.daily;
+    if (!d) return null;
+    return { revenue: d.revenue, rate: d.rate, prev: d.prevRevenue };
   }, []);
 
   // 스마트스토어 — 당월 1일 ~ 오늘
   const smartstore = useAsync(async () => {
     const today = todayKST();
-    const json = await onGet('api/smartstore/analysis', { start: `${today.slice(0, 7)}-01`, end: today });
+    const json = await onGet('api/smartstore/analysis', { start: today, end: today });
     const k = json?.kpis;
     if (!k) return null;
-    return { revenue: k.revenue, orders: k.orders, month: today.slice(0, 7) };
+    return { revenue: k.revenue, orders: k.orders };
   }, []);
+
+  const pct = (r) => (typeof r === 'number' ? `${r > 0 ? '+' : ''}${(r * 100).toFixed(0)}%` : null);
 
   const tiles = [
     {
-      href: '/sales/analysis',
-      label: '실시간 매출 (오늘)',
+      href: '/sales/today',
+      label: '오프라인 매장',
       value: offline.data ? won(offline.data.todayAmount) : null,
-      sub: offline.data
-        ? `오프라인 매장 당일 · 구매 ${fmt(offline.data.todayOrders)}건`
-        : null,
-      tone: 'live',
-      state: offline,
-    },
-    {
-      href: '/sales/analysis',
-      label: offline.data ? `${offline.data.month.slice(5)}월 매출 (오프라인)` : '월별 매출 (오프라인)',
-      value: offline.data ? won(offline.data.amount) : null,
-      sub: offline.data ? `구매 ${fmt(offline.data.oc)}건 · 객단가 ${won(offline.data.aov)}` : null,
+      sub: offline.data ? `구매 ${fmt(offline.data.todayOrders)}건` : null,
       state: offline,
     },
     {
       href: 'https://on-iota-three.vercel.app/',
       external: true,
-      label: cafe24.data ? `${(cafe24.data.month || '').slice(5)}월 매출 (자사몰)` : '월별 매출 (자사몰)',
+      label: '자사몰 (Cafe24)',
       value: cafe24.data ? won(cafe24.data.revenue) : null,
-      sub: cafe24.data ? `Cafe24 · 주문 ${fmt(cafe24.data.orders)}건` : null,
+      sub: cafe24.data
+        ? `지난주 같은 요일 ${won(cafe24.data.prev)}${pct(cafe24.data.rate) ? ` · ${pct(cafe24.data.rate)}` : ''}`
+        : null,
       state: cafe24,
     },
     {
       href: 'https://on-iota-three.vercel.app/',
       external: true,
-      label: smartstore.data ? `${(smartstore.data.month || '').slice(5)}월 매출 (스마트스토어)` : '월별 매출 (스마트스토어)',
+      label: '스마트스토어',
       value: smartstore.data ? won(smartstore.data.revenue) : null,
-      sub: smartstore.data ? `네이버 · 주문 ${fmt(smartstore.data.orders)}건` : null,
+      sub: smartstore.data ? `주문 ${fmt(smartstore.data.orders)}건` : null,
       state: smartstore,
     },
   ];

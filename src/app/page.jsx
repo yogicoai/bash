@@ -23,6 +23,7 @@ export default function HomePage() {
         </div>
       </header>
 
+      <div className="hub-head">오늘 매출 <span>실시간</span></div>
       <HubSummary />
 
       {GROUPS.map((group) => (

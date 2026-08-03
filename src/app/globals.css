@@ -715,3 +715,11 @@ button.card { text-align: left; font-family: inherit; color: var(--text); cursor
   content: '●'; color: var(--good); margin-right: 5px; font-size: 9px; vertical-align: 1px;
 }
 .hub-live .hub-value { color: var(--good); }
+.hub-head { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+.hub-head span {
+  font-size: 10.5px; font-weight: 600; color: var(--good);
+  background: rgba(16,185,129,.12); border-radius: 999px; padding: 2px 8px;
+}
+.hub-tile { border-color: rgba(16,185,129,.35); }
+.hub-tile .hub-value { color: var(--good); }
+.live-badge { color: var(--good); border-color: rgba(16,185,129,.4); }
