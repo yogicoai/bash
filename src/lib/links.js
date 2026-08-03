@@ -112,7 +112,7 @@ export const GROUPS = [
         href: '/sales/today',
         icon: '⚡',
         status: 'ready',
-        desc: '오늘 하루 매장별 판매 · 10분마다 자동 갱신',
+        desc: '오늘 하루 매장별 판매 · 15분마다 자동 갱신',
         source: 'realtime · /api/orders',
       },
       {

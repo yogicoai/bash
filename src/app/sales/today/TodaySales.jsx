@@ -10,13 +10,14 @@ import { buildRawOrders } from '@/lib/sales/normalize';
 /**
  * 실시간 매장별 매출 — 오늘 하루.
  *
- * 갱신 정책: 원천(이카운트)이 10분 주기라 그보다 자주 부를 이유가 없다.
- *   · 10분마다 자동 갱신
+ * 갱신 정책: 이카운트가 10분 주기로 올라가지만 최종 반영까지 12분쯤 걸린다.
+ * 그래서 15분으로 잡는다 — 적재 주기에 맞춰 10분으로 두면 아직 안 들어온 값을 부르게 된다.
+ *   · 15분마다 자동 갱신
  *   · 단, 탭이 보일 때만 — 열어두고 방치한 창이 계속 호출하지 않게
  *   · 다른 탭에 있다가 돌아오면 즉시 한 번 갱신
  *   · 수동 버튼으로 언제든 갱신
  */
-const REFRESH_MS = 10 * 60_000;
+const REFRESH_MS = 15 * 60_000;
 const fmt = (n) => Math.round(n || 0).toLocaleString();
 const won = (n) => `${fmt(n)}원`;
 const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
@@ -81,7 +82,7 @@ export default function TodaySales() {
   return (
     <>
       <div className="toolbar">
-        <span className="badge live-badge">● 실시간 · 10분마다 자동 갱신</span>
+        <span className="badge live-badge">● 실시간 · 15분마다 자동 갱신</span>
         <span className="badge">{today}</span>
         {fetchedAt && (
           <span className="badge">
