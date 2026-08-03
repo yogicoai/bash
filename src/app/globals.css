@@ -623,3 +623,73 @@ button.card { text-align: left; font-family: inherit; color: var(--text); cursor
 .health-down { color: var(--bad); }
 .health-checking { color: var(--muted); }
 .login-logo { width: 168px; height: auto; display: block; margin: 0 0 18px; }
+
+/* ══════════ 다크 모드 ══════════ */
+:root[data-theme='dark'] {
+  --bg: #0f1216; --panel: #171b21; --panel-2: #1c2128;
+  --border: #262c34; --border-strong: #363d47; --border-soft: #21262d;
+  --text: #e6edf3; --muted: #9aa4b2; --subtle: #6e7781;
+  --accent: #4f8cff; --accent-soft: #17233a; --accent-hover: #6aa0ff;
+  --brand-soft: #2a1a12;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-md: 0 2px 8px rgba(0,0,0,.45);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.5);
+}
+:root[data-theme='dark'] .tag-ready { background: #10281d; color: #4ade80; }
+:root[data-theme='dark'] .tag-planned { background: #2a2213; color: #fbbf24; }
+:root[data-theme='dark'] .tag-external { background: #2a1a12; color: #fb923c; }
+:root[data-theme='dark'] .warn-banner { background: #2a2213; border-color: #4a3a18; color: #fbbf24; }
+:root[data-theme='dark'] .error { background: #2a1618; border-color: #4a2226; color: #fca5a5; }
+:root[data-theme='dark'] .snap-count { background: var(--accent-soft); color: #93b4ff; }
+:root[data-theme='dark'] .card-desc,
+:root[data-theme='dark'] .group-head p,
+:root[data-theme='dark'] .page-head p,
+:root[data-theme='dark'] .card-head p { color: var(--muted); }
+:root[data-theme='dark'] .ai-insight { background: var(--accent-soft); border-color: #24365c; }
+:root[data-theme='dark'] .ai-actions { border-top-color: #24365c; }
+:root[data-theme='dark'] .section-info { background: var(--accent-soft); border-color: #24365c; color: #93b4ff; }
+:root[data-theme='dark'] .section-info b { color: #cfe0ff; }
+:root[data-theme='dark'] .modal-overlay,
+:root[data-theme='dark'] .embed-overlay { background: rgba(0,0,0,.65); }
+:root[data-theme='dark'] .sb-logo-box { background: #e6edf3; }
+:root[data-theme='dark'] .login-logo { filter: brightness(0) invert(1); }
+:root[data-theme='dark'] .embed-frame { background: #fff; }
+:root[data-theme='dark'] .code-block { background: #0b0e12; }
+:root[data-theme='dark'] .pill-cover { background:#16243c; color:#93b4ff; border-color:#24365c; }
+:root[data-theme='dark'] .pill-inner { background:#2a2213; color:#fbbf24; border-color:#4a3a18; }
+:root[data-theme='dark'] .pill-doll { background:#2c1622; color:#f9a8d4; border-color:#4a2138; }
+:root[data-theme='dark'] .pill-living { background:#0f2a1c; color:#6ee7b7; border-color:#1b4433; }
+:root[data-theme='dark'] .pill-safety { background:#2a2213; color:#fbbf24; border-color:#4a3a18; }
+:root[data-theme='dark'] .pill-warn { background:#2a1618; color:#fca5a5; border-color:#4a2226; }
+/* 원본 디자인을 유지하는 Y리그는 다크에서도 그대로 둔다 */
+:root[data-theme='dark'] .yl { background: #fff; border-radius: 12px; }
+
+/* ── MCP 안내 ── */
+.steps { list-style: none; padding: 0; margin: 0 0 18px; display: flex; flex-direction: column; gap: 14px; }
+.steps li { display: flex; gap: 12px; align-items: flex-start; }
+.step-n {
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+  background: var(--accent); color: #fff; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.steps strong { font-size: 13.5px; }
+.steps p { margin: 4px 0 4px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+.steps a { font-size: 12px; }
+
+.cfg-box { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.cfg-head { margin-bottom: 10px; }
+.cfg-head strong { display: block; font-size: 13.5px; margin-bottom: 3px; }
+.cfg-head span { font-size: 11.5px; color: var(--muted); }
+
+.ex-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+.ex-cat { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.ex-cat h3 { font-size: 13.5px; margin: 0 0 10px; font-weight: 700; }
+.ex-group { margin-bottom: 12px; }
+.ex-label { font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 5px; }
+.ex-group ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px; }
+.ex-group li {
+  font-size: 12.5px; color: var(--text); line-height: 1.5;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px;
+}
+.sb-foot-theme { margin-bottom: 0; }
+.sb-foot-theme .theme-toggle { width: 100%; }

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { GROUPS } from '@/lib/links';
 import { useEmbed } from './EmbedModal';
 import { resolveHref } from '@/lib/zones';
+import { ThemeToggle } from './Theme';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -79,6 +80,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
+      <div className="sb-foot sb-foot-theme"><ThemeToggle /></div>
       <div className="sb-foot">
         {me && <span className="sb-me" title={`${me} 님으로 로그인`}>{me}</span>}
         <button type="button" className="sb-logout" onClick={logout}>

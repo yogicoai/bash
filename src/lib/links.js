@@ -284,17 +284,17 @@ export const GROUPS = [
   },
   {
     id: 'data',
-    title: '데이터',
+    title: '데이터 · 자동화',
     icon: '🗄️',
-    desc: '원장 내려받기와 Claude(MCP) 연결',
+    desc: 'Claude(MCP)로 데이터 물어보기',
     items: [
       {
-        name: '데이터 내려받기',
+        name: 'MCP 이용 안내',
         href: '/data',
         icon: '📥',
         status: 'ready',
-        desc: '오프라인 매출·Y리그·재고를 CSV/JSON으로 · MCP 연결 안내',
-        source: 'realtime · orders / jwasu / stock',
+        desc: '설치 방법 · 질문 예시 · 설정파일 받기',
+        source: 'onlineData MCP · cloudtype',
       },
     ],
   },
