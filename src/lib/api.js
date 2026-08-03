@@ -42,7 +42,9 @@ async function get(prefix, path, params) {
   if (!json) throw new ApiError(`응답을 해석할 수 없습니다. (${res.status})`, res.status);
 
   // 원천 API는 HTTP 200에 { success:false, message } 를 실어 보내는 경우가 있다.
-  if (json.success === false) throw new ApiError(json.message || json.error || '요청이 실패했습니다.', res.status);
+  // 원천 API는 HTTP 200에 실패를 실어 보내기도 한다 (realtime/offorder는 success, onlineData는 ok)
+  if (json.success === false || json.ok === false)
+    throw new ApiError(json.message || json.error || '요청이 실패했습니다.', res.status);
   if (!res.ok) throw new ApiError(json.message || json.error || `요청이 실패했습니다. (${res.status})`, res.status);
 
   return json;
@@ -53,6 +55,9 @@ export const rtGet = (path, params) => get('rt', path, params);
 
 /** offorder(오프라인/index.js) 호출 */
 export const offGet = (path, params) => get('off', path, params);
+
+/** 온라인 판매분석(onlineData) 호출 */
+export const onGet = (path, params) => get('on', path, params);
 
 /** 파일 다운로드 등 프록시 URL이 직접 필요할 때 */
 export const rtUrl = (path, params) => buildUrl('rt', path, params);

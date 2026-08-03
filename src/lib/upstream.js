@@ -13,6 +13,8 @@
 const UPSTREAMS = {
   rt: process.env.REALTIME_API || 'https://port-0-realtime-lzgmwhc4d9883c97.sel4.cloudtype.app',
   off: process.env.OFFORDER_API || 'https://port-0-offorder-lzgmwhc4d9883c97.sel4.cloudtype.app',
+  // 온라인 판매분석(onlineData) — 홈 요약의 온라인 매출에 쓴다
+  on: process.env.ONLINEDATA_API || 'https://on-iota-three.vercel.app',
 };
 
 export function upstreamBase(name) {
