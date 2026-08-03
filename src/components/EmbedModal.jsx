@@ -39,7 +39,9 @@ export function EmbedProvider({ children }) {
                 </div>
               </div>
               <div className="actions">
-                <span className="badge">{item.href.replace(/^https?:\/\//, '')}</span>
+                {!item.href.startsWith('/') && (
+                  <span className="badge">{item.href.replace(/^https?:\/\//, '')}</span>
+                )}
                 <a className="btn btn-sm" href={item.href} target="_blank" rel="noopener noreferrer">
                   새 창 ↗
                 </a>

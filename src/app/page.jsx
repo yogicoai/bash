@@ -1,4 +1,5 @@
 import DashCard from '@/components/DashCard';
+import { ViewModeToggle } from '@/components/ViewMode';
 import { GROUPS } from '@/lib/links';
 
 export default function HomePage() {
@@ -13,9 +14,10 @@ export default function HomePage() {
           <h1>요기보 통합 대시보드</h1>
           <p>오프라인·영업·온라인·마케팅·B2B·CS 데이터를 한곳에서</p>
         </div>
-        <span className="badge">
-          dash 화면 {done} / {inDash.length}
-        </span>
+        <div className="actions">
+          <ViewModeToggle />
+          <span className="badge">dash 화면 {done} / {inDash.length}</span>
+        </div>
       </header>
 
       {GROUPS.map((group) => (
