@@ -4,12 +4,15 @@ import { useCallback, useEffect, useState } from 'react';
 
 /**
  * 라이트/다크 전환 — html 에 data-theme 을 심고 CSS 변수만 바꾼다.
- * 선택은 localStorage 에 남고, 저장값이 없으면 OS 설정을 따른다.
+ * 기본은 다크. layout 의 <html data-theme="dark"> 와 맞춰 두어
+ * 첫 화면이 밝게 번쩍였다가 어두워지는 일이 없다.
+ * 한 번 고르면 그 선택이 localStorage 에 남는다.
  */
 const KEY = 'dash.theme';
+const DEFAULT_THEME = 'dark';
 
 export function useTheme() {
-  const [theme, setThemeState] = useState('light');
+  const [theme, setThemeState] = useState(DEFAULT_THEME);
 
   useEffect(() => {
     let next = null;
@@ -18,9 +21,7 @@ export function useTheme() {
     } catch {
       /* 접근 불가면 OS 설정으로 */
     }
-    if (next !== 'light' && next !== 'dark') {
-      next = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
+    if (next !== 'light' && next !== 'dark') next = DEFAULT_THEME;
     setThemeState(next);
     document.documentElement.dataset.theme = next;
   }, []);
