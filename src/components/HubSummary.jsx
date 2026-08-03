@@ -3,9 +3,11 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import TodaySales from '@/app/sales/today/TodaySales';
-import { useViewMode } from './ViewMode';
-import { onGet, rtGet } from '@/lib/api';
+import DataState from './DataState';
+import { onGet } from '@/lib/api';
 import { useAsync } from '@/hooks/useAsync';
+import { useViewMode } from './ViewMode';
+import { rtGet } from '@/lib/api';
 import { isExcludedProduct, isExcludedStore } from '@/lib/sales/config';
 import { buildRawOrders } from '@/lib/sales/normalize';
 
@@ -29,14 +31,104 @@ const fmt = (n) => Math.round(n || 0).toLocaleString();
 const won = (n) => `${fmt(n)}원`;
 const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
+/**
+ * 동기화 실행 버튼 — onlineData 의 수집 작업을 사람이 눌러 돌린다.
+ * 이 엔드포인트들은 조회가 아니라 작업을 시작시키므로 자동 호출하지 않고 버튼으로만 노출한다.
+ */
+function SyncButton({ path, onDone }) {
+  const [state, setState] = useState('idle');
+
+  async function run(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setState('running');
+    try {
+      await onGet(path);
+      // 작업이 백그라운드로 도는 동안 잠시 기다렸다가 값을 다시 읽는다
+      setTimeout(() => { setState('idle'); onDone?.(); }, 6000);
+    } catch {
+      setState('error');
+      setTimeout(() => setState('idle'), 3000);
+    }
+  }
+
+  return (
+    <button type="button" className="hub-sync" onClick={run} disabled={state === 'running'} title="지금 동기화">
+      {state === 'running' ? '동기화 중…' : state === 'error' ? '실패' : '↻ 동기화'}
+    </button>
+  );
+}
+
+/** 채널별 오늘 판매 상품 — 자사몰은 compare/best, 스마트스토어는 analysis.productTop */
+function ChannelDetail({ channel }) {
+  const today = todayKST();
+  const data = useAsync(async () => {
+    if (channel === 'cafe24') {
+      const j = await onGet('api/compare/best', { start: today, end: today });
+      return (j?.cafe24 || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales }));
+    }
+    const j = await onGet('api/smartstore/analysis', { start: today, end: today });
+    return (j?.productTop || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales, tier: r.tier }));
+  }, [channel]);
+
+  const rows = data.data || [];
+  const max = Math.max(1, ...rows.map((r) => r.sales));
+  const total = rows.reduce((a, r) => a + (r.sales || 0), 0);
+
+  return (
+    <>
+      <DataState
+        loading={data.loading}
+        error={data.error}
+        empty={!data.loading && !data.error && rows.length === 0}
+        emptyText="오늘 판매된 상품이 없습니다."
+        onRetry={data.reload}
+      />
+      {rows.length > 0 && (
+        <>
+          <p className="summary">
+            상품 <b>{rows.length}종</b> · 합계 <b>{won(total)}</b>
+          </p>
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th className="col-narrow center">순위</th>
+                  <th>상품</th>
+                  {channel === 'smartstore' && <th>등급</th>}
+                  <th className="right">수량</th>
+                  <th className="right">매출</th>
+                  <th style={{ width: 130 }}>비중</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={r.name + i}>
+                    <td className="center"><span className="rank-badge">{i + 1}</span></td>
+                    <td className="strong">{r.name}</td>
+                    {channel === 'smartstore' && <td><span className="pill">{r.tier || '-'}</span></td>}
+                    <td className="right mono">{fmt(r.qty)}</td>
+                    <td className="right mono strong">{won(r.sales)}</td>
+                    <td><div className="minibar"><div style={{ width: `${(r.sales / max) * 100}%` }} /></div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 export default function HubSummary() {
   const { mode } = useViewMode();
-  const [openDetail, setOpenDetail] = useState(false);
+  const [openDetail, setOpenDetail] = useState(null);
   const detailRef = useRef(null);
 
   // 한 페이지 모드에서는 이동하지 않고 아래로 펼친 뒤 그 위치로 스크롤한다
-  const toggleDetail = () => {
-    const next = !openDetail;
+  const toggleDetail = (key) => {
+    const next = openDetail === key ? null : key;
     setOpenDetail(next);
     if (next) setTimeout(() => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
   };
@@ -91,6 +183,7 @@ export default function HubSummary() {
   const tiles = [
     {
       href: '/sales/today',
+      detailKey: 'offline',
       label: '오프라인 매장',
       value: offline.data ? won(offline.data.todayAmount) : null,
       sub: offline.data ? `구매 ${fmt(offline.data.todayOrders)}건` : null,
@@ -99,16 +192,20 @@ export default function HubSummary() {
     {
       href: 'https://on-iota-three.vercel.app/',
       external: true,
+      detailKey: 'cafe24',
       label: '자사몰 (Cafe24)',
       value: cafe24.data ? won(cafe24.data.revenue) : null,
       sub: cafe24.data
         ? `지난주 같은 요일 ${won(cafe24.data.prev)}${pct(cafe24.data.rate) ? ` · ${pct(cafe24.data.rate)}` : ''}`
         : null,
+      syncPath: 'api/refresh-today',
+      onSynced: () => cafe24.reload(),
       state: cafe24,
     },
     {
       href: 'https://on-iota-three.vercel.app/',
       external: true,
+      detailKey: 'smartstore',
       label: '스마트스토어',
       value: smartstore.data ? (smartstore.data.stale ? '동기화 필요' : won(smartstore.data.revenue)) : null,
       sub: smartstore.data
@@ -117,6 +214,8 @@ export default function HubSummary() {
           : `주문 ${fmt(smartstore.data.orders)}건`
         : null,
       tone: smartstore.data?.stale ? 'stale' : null,
+      syncPath: 'api/smartstore/sync-week',
+      onSynced: () => smartstore.reload(),
       state: smartstore,
     },
   ];
@@ -142,25 +241,34 @@ export default function HubSummary() {
         );
         const cls = `hub-tile ${t.tone ? `hub-${t.tone}` : ''}`;
 
-        // 오프라인 매장 타일 — 한 페이지 모드면 이동 대신 아래로 펼친다
-        if (t.href === '/sales/today' && mode === 'popup') {
+        // 한 페이지 모드면 이동 대신 아래로 펼친다
+        if (t.detailKey && mode === 'popup') {
+          const on = openDetail === t.detailKey;
+          const more = t.detailKey === 'offline' ? '매장별 보기' : '판매 상품 보기';
           return (
-            <button
-              type="button"
-              className={`${cls} ${openDetail ? 'hub-open' : ''}`}
-              onClick={toggleDetail}
-              key={t.label}
-            >
-              {body}
-              <span className="hub-more">{openDetail ? '접기 ▲' : '매장별 보기 ▼'}</span>
-            </button>
+            <div className="hub-wrap" key={t.label}>
+              <button type="button" className={`${cls} ${on ? 'hub-open' : ''}`} onClick={() => toggleDetail(t.detailKey)}>
+                {body}
+                <span className="hub-more">{on ? '접기 ▲' : `${more} ▼`}</span>
+              </button>
+              {t.syncPath && <SyncButton path={t.syncPath} onDone={t.onSynced} />}
+            </div>
           );
         }
 
-        return t.external ? (
-          <a className={cls} href={t.href} target="_blank" rel="noopener noreferrer" key={t.label}>{body}</a>
+        const inner = t.external ? (
+          <a className={cls} href={t.href} target="_blank" rel="noopener noreferrer">{body}</a>
         ) : (
-          <Link className={cls} href={t.href} key={t.label}>{body}</Link>
+          <Link className={cls} href={t.href}>{body}</Link>
+        );
+
+        return t.syncPath ? (
+          <div className="hub-wrap" key={t.label}>
+            {inner}
+            <SyncButton path={t.syncPath} onDone={t.onSynced} />
+          </div>
+        ) : (
+          <div className="hub-wrap" key={t.label}>{inner}</div>
         );
       })}
       </div>
@@ -168,10 +276,14 @@ export default function HubSummary() {
       {mode === 'popup' && openDetail && (
         <div className="hub-detail" ref={detailRef}>
           <div className="hub-detail-head">
-            <h2>실시간 매장별 매출</h2>
-            <button type="button" className="btn btn-sm" onClick={toggleDetail}>접기 ▲</button>
+            <h2>
+              {openDetail === 'offline' ? '실시간 매장별 매출'
+                : openDetail === 'cafe24' ? '자사몰 오늘 판매 상품'
+                : '스마트스토어 오늘 판매 상품'}
+            </h2>
+            <button type="button" className="btn btn-sm" onClick={() => toggleDetail(openDetail)}>접기 ▲</button>
           </div>
-          <TodaySales />
+          {openDetail === 'offline' ? <TodaySales /> : <ChannelDetail channel={openDetail} />}
         </div>
       )}
     </>

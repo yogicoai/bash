@@ -735,3 +735,12 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .hub-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .hub-detail-head h2 { font-size: 15.5px; margin: 0; font-weight: 700; }
 .hub-detail .hub { margin-bottom: 16px; }
+.hub-wrap { position: relative; display: flex; }
+.hub-wrap > .hub-tile { flex: 1; }
+.hub-sync {
+  position: absolute; top: 10px; right: 10px; z-index: 1;
+  background: var(--panel-2); border: 1px solid var(--border-strong); color: var(--muted);
+  border-radius: 7px; font-size: 10.5px; font-family: inherit; padding: 3px 8px; cursor: pointer;
+}
+.hub-sync:hover { color: var(--accent); border-color: var(--accent); }
+.hub-sync:disabled { opacity: .6; cursor: default; }
