@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import DataState from '@/components/DataState';
 import { useCumulativeMonths, useYLeagueCumulative } from '@/hooks/useYLeague';
 import { buildCumulative } from '@/lib/yleague/cumulative';
 import { LEAGUE_YEAR, UNRANK_MONTH, isUnrankStore, storeLogo } from '@/lib/yleague/rules';
@@ -31,7 +30,7 @@ export default function YLeagueRanking() {
     setSaving(true);
     try {
       const { default: html2canvas } = await import('html2canvas');
-      const canvas = await html2canvas(captureRef.current, { backgroundColor: '#f8fafc', scale: 2, useCORS: true });
+      const canvas = await html2canvas(captureRef.current, { backgroundColor: '#f5f6f8', scale: 2, useCORS: true });
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
       a.download = `Y리그_누적랭킹_${LEAGUE_YEAR}-${String(targetMonth).padStart(2, '0')}.png`;
@@ -42,81 +41,62 @@ export default function YLeagueRanking() {
   }
 
   return (
-    <>
-      <section className="period-bar">
-        <div className="period-title">
-          <span className="period-icon">📊</span>
-          <div>
-            <div className="period-label">누적 조회</div>
-            <div className="period-value">{LEAGUE_YEAR}년 1월 ~ {targetMonth}월</div>
+    <div className="yl">
+      <div className="ylr-top">
+        <div className="yl-top-row">
+          <h1 className="yl-title">
+            <span className="ic">👑</span> {LEAGUE_YEAR}년 Y리그 매장/개인 누적 달성 현황
+          </h1>
+          <div className="yl-top-actions">
+            <select className="input select" value={targetMonth} onChange={(e) => setTargetMonth(Number(e.target.value))}>
+              {monthOptions.map((m) => (
+                <option key={m} value={m}>{LEAGUE_YEAR}년 {m}월 누적 조회</option>
+              ))}
+            </select>
+            <button type="button" className="yl-btn yl-btn-cyan" onClick={reload} disabled={loading}>
+              {loading && progress.total ? `불러오는 중 ${progress.done}/${progress.total}` : '조회하기'}
+            </button>
+            <button type="button" className="yl-btn" style={{ background: '#2563eb' }} onClick={downloadImage} disabled={saving || loading}>
+              {saving ? '저장 중…' : '이미지 다운로드'}
+            </button>
           </div>
         </div>
-
-        <div className="period-presets">
-          <select className="input select" value={targetMonth} onChange={(e) => setTargetMonth(Number(e.target.value))}>
-            {monthOptions.map((m) => (
-              <option key={m} value={m}>{LEAGUE_YEAR}년 {m}월 누적 조회</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="actions">
-          {loading && progress.total > 0 && (
-            <span className="badge">불러오는 중 {progress.done}/{progress.total}개월</span>
-          )}
-          <button type="button" className="btn" onClick={downloadImage} disabled={saving || loading}>
-            {saving ? '저장 중…' : '↓ 이미지 저장'}
-          </button>
-        </div>
-        {loading && <div className="period-progress active" />}
-      </section>
-
-      <div className="section-info">
-        <span className="info-icon">i</span>
-        <span>
-          매달 종목별 <b>1등</b>을 달성으로 집계합니다 · 중도 입사자는 그 달 달성 대상에서 제외 ·
-          좌수왕은 목표 150 이상만 달성 판정 · 조회 월에 활동한 인원만 표시
-        </span>
       </div>
 
-      <DataState loading={loading} error={error} onRetry={reload} />
+      <div className="ylr-body">
+        {loading && <div className="yl-empty"><span className="ic">⏳</span>{progress.total ? `월별 데이터 집계 중… ${progress.done}/${progress.total}개월` : '집계 중…'}</div>}
+        {error && <div className="yl-empty"><span className="ic">⚠️</span>{error.message}</div>}
 
-      {!loading && !error && (
-        <div className="yl-rank-grid" ref={captureRef}>
-          {SECTIONS.map((s) => (
-            <div className="card" key={s.key}>
-              <div className="card-head">
-                <div>
-                  <h2>{s.title}</h2>
-                  <p>누적 {targetMonth}개월 기준</p>
-                </div>
+        {!loading && !error && (
+          <div className="ylr-grid" ref={captureRef}>
+            {SECTIONS.map((s) => (
+              <div className="ylr-card" key={s.key}>
+                <h2>{LEAGUE_YEAR}년 {s.title}</h2>
+                <RankTable rows={result[s.key]} hasName={s.hasName} targetMonth={targetMonth} />
               </div>
-              <RankTable rows={result[s.key]} hasName={s.hasName} targetMonth={targetMonth} />
-            </div>
-          ))}
-        </div>
-      )}
-    </>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
 function RankTable({ rows, hasName, targetMonth }) {
-  if (!rows.length) {
-    return <div className="chart-empty"><div className="chart-empty-ic">📭</div>해당 월에 활성화된 데이터가 없습니다.</div>;
-  }
+  if (!rows.length) return <div className="ylr-empty">해당 월에 활성화된 데이터가 존재하지 않습니다.</div>;
   const muyeokMonth = targetMonth === UNRANK_MONTH_NO;
 
   return (
-    <div className="table-wrap" style={{ maxHeight: 520 }}>
-      <table className="table yl-rank-table">
+    <div className="ylr-scroll">
+      <table className="ylr-table">
         <thead>
           <tr>
-            <th className="center">순위</th>
-            <th>매장</th>
-            {hasName && <th>이름</th>}
-            <th className="right">누적</th>
-            <th className="right">달성</th>
-            <th className="right">미달성</th>
+            <th>순위</th>
+            <th>매장명</th>
+            {hasName && <th>성명</th>}
+            <th>누적 개월수</th>
+            <th>달성</th>
+            <th>미달성</th>
           </tr>
         </thead>
         <tbody>
@@ -125,22 +105,18 @@ function RankTable({ rows, hasName, targetMonth }) {
             const muyeok = muyeokMonth && isUnrankStore(r.storeName);
             return (
               <tr key={`${r.storeName}_${r.name}`} className={muyeok ? 'muyeok' : ''}>
-                <td className="center"><span className={`rank-num ${r.rank <= 3 ? 'top' : ''}`}>{r.rank}</span></td>
-                <td>
-                  <span className="store-wrap">
-                    {logo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={logo} alt="" className="store-logo" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
-                    ) : (
-                      <span className="store-logo" />
-                    )}
-                    <span>{r.storeName}</span>
-                  </span>
+                <td className="ylr-rank">{r.rank}</td>
+                <td className="store">
+                  {logo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logo} alt="" className="ylr-logo" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+                  )}
+                  {r.storeName}
                 </td>
-                {hasName && <td className="strong">{r.name}</td>}
-                <td className="right mono">{r.totalMonths}</td>
-                <td className="right mono achieve">{r.achieved}</td>
-                <td className="right mono fail">{r.failed}</td>
+                {hasName && <td className="name">{r.name}</td>}
+                <td>{r.totalMonths}</td>
+                <td className="ylr-ach">{r.achieved}</td>
+                <td className="ylr-fail">{r.failed}</td>
               </tr>
             );
           })}

@@ -17,11 +17,10 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <Link href="/" className="sb-brand">
-        <span className="sb-logo">Y</span>
-        <span className="sb-brand-text">
-          Yogibo
-          <small>통합 대시보드</small>
-        </span>
+        {/* 원본이 검정 단색이라 다크 사이드바에서는 흰색으로 반전해 쓴다 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="YOGI CORPORATION" className="sb-logo" />
+        <span className="sb-brand-sub">통합 대시보드</span>
       </Link>
 
       <nav className="sb-nav">
