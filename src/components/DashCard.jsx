@@ -2,6 +2,7 @@
 
 import { useEmbed } from './EmbedModal';
 import { popupHref, useViewMode } from './ViewMode';
+import { resolveHref } from '@/lib/zones';
 
 const TAG = {
   ready: { cls: 'tag-ready', label: '사용 가능' },
@@ -40,7 +41,7 @@ export default function DashCard({ item }) {
       <button
         type="button"
         className="card card-link"
-        onClick={() => open({ ...item, href: popupHref(item.href) })}
+        onClick={() => open({ ...item, href: popupHref(resolveHref(item)) })}
       >
         {body}
       </button>

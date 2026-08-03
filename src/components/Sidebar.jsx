@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { GROUPS } from '@/lib/links';
 import { useEmbed } from './EmbedModal';
+import { resolveHref } from '@/lib/zones';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -55,7 +56,7 @@ export default function Sidebar() {
               // 외부 화면은 팝업(iframe)으로 — 사이드바를 유지한 채 위에 띄운다
               if (item.slug) {
                 return (
-                  <button type="button" className="sb-item" key={item.name} onClick={() => open(item)}>
+                  <button type="button" className="sb-item" key={item.name} onClick={() => open({ ...item, href: resolveHref(item) })}>
                     <span className="sb-ic">{item.icon}</span>
                     <span className="sb-label">{item.name}</span>
                     <span className="sb-ext" title="팝업으로 열림">⧉</span>

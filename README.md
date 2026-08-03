@@ -75,24 +75,43 @@ DASH_USERS=yogico:비밀번호, design:sha256:9f86d08…, staff:비밀번호
 | Y리그 현황 | dash 화면 | `Y리그현황.html` |
 | Y리그 누적랭킹 | dash 화면 | `Y리그 누적랭킹.html` |
 
-### 온라인 · 마케팅 · B2B · CS
+### 온라인 · 마케팅 · B2B · CS · 디자인
 
-독립 Next 앱들이다. **다시 만들지 않고 팝업(iframe)으로 띄운다.**
-Next는 기본적으로 `X-Frame-Options`를 걸지 않아 삽입이 가능하다.
+독립 앱들이다. **다시 만들지 않고 팝업(iframe)으로 띄운다.** 배포본(Vercel) 주소를 기본으로 쓰고,
+6곳 모두 `X-Frame-Options`·CSP `frame-ancestors`가 없어 삽입이 가능하다.
 
-| 도메인 | 화면 | 앱 | 포트 |
-|---|---|---|---|
-| 온라인 | 온라인 판매분석 | `onlineData` | 5200 |
-| 마케팅 | 광고 통합 | `mkboard` | 5810 |
-| 마케팅 | 블로그 통계 | `BlogData` | 5820 |
-| B2B | B2B 메일 마케팅 | `mktCl` | 5600 |
-| CS | CS 셀프가이드 | `cs-self-guide` | 5830 |
+| 도메인 | 화면 | 주소 |
+|---|---|---|
+| 온라인 | 온라인 판매분석 | `on-iota-three.vercel.app` |
+| 온라인 | 온라인 일일매출 | `on-iota-three.vercel.app/api/report?date=오늘` |
+| 마케팅 | 광고 통합 | `mkt-sage.vercel.app` |
+| 마케팅 | 블로그 통계 | `blog-livid-sigma-32.vercel.app` |
+| B2B | B2B 메일 마케팅 | `mktcr.vercel.app/send` |
+| CS | CS 셀프가이드 | `cs-fawn-alpha.vercel.app/admin` |
+| 디자인 | 디자인 빌더 | `design-t-omega.vercel.app` |
 
-원래 mkboard·BlogData·cs-self-guide가 **모두 3000 포트**라 동시에 띄울 수 없었다.
-각 앱 `package.json`의 `dev`/`start`에 `-p`를 붙여 나눠 놓았다.
+일일매출은 날짜 파라미터가 필요해서 **누를 때 한국 기준 오늘 날짜**를 붙인다(`zones.js`의 `resolveHref`).
 
-주소는 `src/lib/zones.js`가 `NEXT_PUBLIC_ZONE_*`에서 읽고, 없으면 위 로컬 기본값을 쓴다.
-배포 후에는 환경변수에 실제 주소만 넣으면 된다. 앱이 안 떠 있으면 팝업 상단에 실행 명령이 안내된다.
+`NEXT_PUBLIC_ZONE_*` 로 덮어쓰면 로컬 개발본을 볼 수 있다. 그때만 팝업 상단에 실행 명령이 안내된다.
+로컬 dev 포트는 원래 mkboard·BlogData·cs-self-guide가 모두 3000이라 겹쳐서,
+각 앱 `package.json`의 `dev`/`start`에 `-p`를 붙여 나눠 두었다
+(5200 onlineData · 5600 mktCl · 5810 mkboard · 5820 BlogData · 5830 cs-self-guide).
+
+## 데이터 내려받기 · MCP (`/data`)
+
+화면이 쓰는 원장을 CSV/JSON으로 받는다. 고객 개인정보는 포함하지 않는다.
+데이터셋 5종 — 오프라인 매출 원장 · Y리그 좌수 실적 · Y리그 일자별 좌수 · 물류센터 재고 · 매장 창고재고.
+
+**채팅으로 확인하기(MCP)** — `onlineData`의 MCP 서버가 온라인·오프라인 데이터를 함께 노출한다.
+Claude Desktop에 연결하면 화면을 열지 않고 대화로 물어볼 수 있다.
+
+```
+원격 엔드포인트  https://port-0-yogibo-onmcp-lzgmwhc4d9883c97.sel4.cloudtype.app/mcp
+헬스체크        같은 호스트의 /health
+인증           Authorization: Bearer <MCP_TOKEN>
+```
+
+⚠️ `app.cloudtype.io/@…` 주소는 배포 **콘솔**이라 Claude가 붙을 수 없다. 위 `/mcp` 주소를 써야 한다.
 
 ## 원천 API (오프라인)
 
