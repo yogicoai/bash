@@ -1,6 +1,7 @@
 import DashCard from '@/components/DashCard';
 import { ViewModeToggle } from '@/components/ViewMode';
 import { ThemeToggle } from '@/components/Theme';
+import HubSummary from '@/components/HubSummary';
 import { GROUPS } from '@/lib/links';
 
 export default function HomePage() {
@@ -21,6 +22,8 @@ export default function HomePage() {
           <span className="badge">dash 화면 {done} / {inDash.length}</span>
         </div>
       </header>
+
+      <HubSummary />
 
       {GROUPS.map((group) => (
         <section className="group" key={group.id}>
