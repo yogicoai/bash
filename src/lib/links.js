@@ -80,15 +80,7 @@ export const GROUPS = [
         href: '/sales/analysis',
         icon: '📊',
         status: 'ready',
-        desc: '기간별 매출·판매 분석 (EPP 별도 분류)',
-        source: 'realtime · orders / months / jwasu-table',
-      },
-      {
-        name: '매장별 판매분석',
-        href: '/sales/by-store',
-        icon: '🏪',
-        status: 'ready',
-        desc: '같은 분석, EPP는 프리미엄에 합산',
+        desc: '기간별 매출·판매 분석 · 탭 10종',
         source: 'realtime · orders / months / jwasu-table',
       },
       {
