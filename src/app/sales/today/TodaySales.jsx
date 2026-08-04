@@ -33,7 +33,29 @@ export default function TodaySales() {
   const today = todayKST();
 
   const data = useAsync(async () => {
-    const json = await rtGet('api/orders', { month: today.slice(0, 7), store: 'all' });
+    const month = today.slice(0, 7);
+    const lastDay = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
+
+    const [json, jwasu] = await Promise.all([
+      rtGet('api/orders', { month, store: 'all' }),
+      rtGet('api/jwasu/dashboard', {
+        searchType: 'month', month,
+        date: `${month}-${lastDay}`, startDate: `${month}-01`, endDate: `${month}-${lastDay}`,
+      }).catch(() => null),
+    ]);
+
+    // 좌수 — 한 매장에 여러 사람이 있으므로 매장 단위로 합친다
+    const seats = new Map();
+    for (const r of jwasu?.data || []) {
+      const st = r.storeName;
+      if (!st) continue;
+      const cur = seats.get(st) || { count: 0, target: 0, people: 0 };
+      cur.count += Number(r.count || 0);
+      cur.target += Number(r.targetCount || 0);
+      cur.people += 1;
+      seats.set(st, cur);
+    }
+
     const lines = (json?.orders || []).filter(
       (o) =>
         String(o.date || '').slice(0, 10) === today &&
@@ -42,7 +64,7 @@ export default function TodaySales() {
     );
 
     setFetchedAt(new Date());
-    return { lines };
+    return { lines, seats: Object.fromEntries(seats) };
   }, [tick]);
 
   useEffect(() => {
@@ -61,6 +83,7 @@ export default function TodaySales() {
 
   const { rows, total } = useMemo(() => {
     const lines = data.data?.lines || [];
+    const seats = data.data?.seats || {};
     const byStore = new Map();
     for (const o of lines) {
       const s = o.store || '미지정';
@@ -88,18 +111,31 @@ export default function TodaySales() {
         }
         const items = [...byItem.values()].sort((a, b) => b.amount - a.amount);
 
-        return { store, amount, oc, qty, aov: oc ? amount / oc : 0, items };
+        const seat = seats[store] || null;
+        return {
+          store, amount, oc, qty, aov: oc ? amount / oc : 0, items,
+          seatCount: seat?.count ?? null,
+          seatTarget: seat?.target ?? null,
+          seatRate: seat?.target ? (seat.count / seat.target) * 100 : null,
+        };
       })
       .sort((a, b) => b.amount - a.amount);
 
     const total = rows.reduce(
-      (a, r) => ({ amount: a.amount + r.amount, oc: a.oc + r.oc, qty: a.qty + r.qty }),
-      { amount: 0, oc: 0, qty: 0 },
+      (a, r) => ({
+        amount: a.amount + r.amount, oc: a.oc + r.oc, qty: a.qty + r.qty,
+        seatCount: a.seatCount + (r.seatCount || 0), seatTarget: a.seatTarget + (r.seatTarget || 0),
+      }),
+      { amount: 0, oc: 0, qty: 0, seatCount: 0, seatTarget: 0 },
     );
     return { rows, total };
   }, [data.data]);
 
   const max = Math.max(1, ...rows.map((r) => r.amount));
+  // 좌수 달성률을 색으로 가르는 기준 — 이번 달이 지난 만큼은 왔어야 한다
+  const expectedPct = (Number(today.slice(8, 10)) / new Date(
+    Number(today.slice(0, 4)), Number(today.slice(5, 7)), 0,
+  ).getDate()) * 100;
 
   return (
     <>
@@ -153,6 +189,7 @@ export default function TodaySales() {
                 <th className="right">구매건수</th>
                 <th className="right">수량</th>
                 <th className="right">객단가</th>
+                <th className="right" title="이번 달 누적 좌수 · 오늘 매출과 기준이 다르다">좌수(이번 달)</th>
                 <th style={{ width: 140 }}>비중</th>
               </tr>
             </thead>
@@ -174,6 +211,19 @@ export default function TodaySales() {
                       <td className="right mono">{fmt(r.oc)}건</td>
                       <td className="right mono dim">{fmt(r.qty)}</td>
                       <td className="right mono">{won(r.aov)}</td>
+                      <td className="right mono">
+                        {r.seatCount == null ? <span className="qty-none">-</span> : (
+                          <>
+                            {fmt(r.seatCount)}
+                            {r.seatTarget ? <span className="dim">{' / '}{fmt(r.seatTarget)}</span> : null}
+                            {r.seatRate != null && (
+                              <span className={`seat-rate ${r.seatRate >= expectedPct ? 'up' : 'down'}`}>
+                                {r.seatRate.toFixed(0)}%
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </td>
                       <td><div className="minibar"><div style={{ width: `${(r.amount / max) * 100}%` }} /></div></td>
                     </tr>
                     {on && (
@@ -194,6 +244,14 @@ export default function TodaySales() {
                 <td className="right mono">{fmt(total.oc)}건</td>
                 <td className="right mono">{fmt(total.qty)}</td>
                 <td className="right mono">{won(total.oc ? total.amount / total.oc : 0)}</td>
+                <td className="right mono">
+                  {total.seatCount ? (
+                    <>
+                      <strong>{fmt(total.seatCount)}</strong>
+                      <span className="dim"> / {fmt(total.seatTarget)}</span>
+                    </>
+                  ) : <span className="qty-none">-</span>}
+                </td>
                 <td />
               </tr>
             </tbody>

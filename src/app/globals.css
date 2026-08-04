@@ -890,3 +890,8 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .target-card .target-bar { margin: 0; }
 .target-card-amt { margin-top: 9px; font-size: 12px; color: var(--muted); }
 .target-card-amt b { color: var(--text, inherit); font-weight: 700; }
+
+/* 매장별 표의 좌수 달성률 — 이번 달 경과분보다 앞서면 초록 */
+.seat-rate { margin-left: 8px; padding-left: 8px; border-left: 1px solid var(--line); font-size: 11px; font-weight: 700; }
+.seat-rate.up { color: var(--up, #16a34a); }
+.seat-rate.down { color: var(--down, #dc2626); }
