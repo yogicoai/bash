@@ -9,8 +9,9 @@
  *   'planned'  이관/연결 예정 (phase 참고)
  *   'external' 다른 사이트 — 기본은 팝업(iframe)으로 dash 안에서 연다
  *
- * newTab: true — 자체 로그인이 있는 화면. iframe 안에서는 브라우저가 서드파티
- * 저장소를 막아 로그인이 유지되지 않으므로 새 창으로 띄운다.
+ * windowOnly: true — 팝업(iframe) 안에서는 끝까지 동작하지 않는 화면.
+ * 그래도 일단 팝업으로 연다 — 어떤 화면인지 보이는 편이 낫고, 안내와 함께
+ * "크게 열기" 버튼을 띄워 새 창으로 넘어가게 한다.
  */
 
 import { ZONES } from './zones';
@@ -111,14 +112,6 @@ export const GROUPS = [
     desc: '판매 실적 분석',
     items: [
       {
-        name: '실시간 매장별 매출',
-        href: '/sales/today',
-        icon: '⚡',
-        status: 'ready',
-        desc: '오늘 하루 매장별 판매 · 15분마다 자동 갱신',
-        source: 'realtime · /api/orders',
-      },
-      {
         name: '영업분석',
         href: '/sales/analysis',
         icon: '📊',
@@ -129,9 +122,9 @@ export const GROUPS = [
       {
         name: '매장매니저 스케줄 관리',
         href: 'https://yogibo.kr/off/staff/schedule.html',
-        // Cafe24가 이 경로에만 Cloudflare 봇 검증(302)을 걸어 둬서
-        // iframe 안에서는 통과할 수 없다 → 새 창으로 연다
-        newTab: true,
+        slug: 'staff-schedule',
+        // Cafe24 봇 검증을 iframe 안에서는 통과할 수 없다 → 크게 열기 안내
+        windowOnly: true,
         icon: '📅',
         status: 'external',
         desc: '매장 매니저 근무·시차 캘린더',
@@ -226,9 +219,10 @@ export const GROUPS = [
       {
         name: 'CS 셀프가이드',
         href: ZONES.cs,
-        // 자체 로그인(24시간 유지)을 쓰는데 iframe 안에서는 브라우저가
-        // 서드파티 저장소를 막아 로그인이 유지되지 않는다 → 새 창으로 연다
-        newTab: true,
+        slug: 'cs-guide',
+        // 자체 로그인을 쓰는데 iframe 안에서는 브라우저가 서드파티 저장소를
+        // 막아 로그인이 유지되지 않는다 → 크게 열기 안내
+        windowOnly: true,
         icon: '🎧',
         status: 'external',
         desc: '배송 · 교환/환불 · A/S 상담 셀프 가이드',

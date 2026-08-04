@@ -793,3 +793,7 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .target-edit .input { min-width: 170px; }
 .target-note { flex-basis: 100%; margin: 2px 0 0; font-size: 11px; color: var(--muted); }
 .target-label em { color: var(--accent); font-style: normal; font-weight: 700; margin-left: 3px; }
+
+/* 팝업 안에서 끝까지 동작하지 않는 화면 안내 */
+.embed-hint-warn { color: var(--warn, #f59e0b); }
+.embed-hint-warn a { color: inherit; font-weight: 700; text-decoration: underline; }

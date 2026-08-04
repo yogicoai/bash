@@ -74,12 +74,25 @@ export function EmbedProvider({ children }) {
                 {!item.href.startsWith('/') && (
                   <span className="badge">{item.href.replace(/^https?:\/\//, '')}</span>
                 )}
-                <a className="btn btn-sm" href={item.href} target="_blank" rel="noopener noreferrer">
-                  새 창 ↗
+                <a
+                  className={`btn btn-sm ${item.windowOnly ? 'btn-download' : ''}`}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  크게 열기 ↗
                 </a>
                 <button type="button" className="embed-close" onClick={close} aria-label="닫기">✕</button>
               </div>
             </header>
+            {item.windowOnly && (
+              <div className="embed-hint embed-hint-warn">
+                이 화면은 팝업 안에서는 끝까지 동작하지 않습니다
+                {' — '}
+                <a href={item.href} target="_blank" rel="noopener noreferrer">크게 열기 ↗</a>
+                로 넘어가 주세요.
+              </div>
+            )}
             {isLocal(item.href) && ZONE_COMMANDS[item.slug] && (
               <div className="embed-hint">
                 화면이 비어 있으면 그 앱이 아직 안 떠 있는 겁니다 — <code>{ZONE_COMMANDS[item.slug]}</code>
