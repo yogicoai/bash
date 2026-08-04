@@ -847,3 +847,13 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 }
 .inflow-chip b { font-weight: 700; }
 .inflow-chip i { font-style: normal; font-size: 11px; color: var(--muted); }
+
+/* 매장 행을 눌러 판매 상품 펼치기 */
+.row-click { cursor: pointer; }
+.row-click:hover { background: var(--hover, rgba(148, 163, 184, 0.08)); }
+.row-caret { display: inline-block; width: 12px; color: var(--muted); }
+.row-open { background: var(--hover, rgba(148, 163, 184, 0.08)); }
+.sub-row > td { padding: 0 12px 14px; border-top: 0; }
+.store-items .summary { margin: 2px 0 8px; }
+.table-sub { font-size: 12px; }
+.table-sub th, .table-sub td { padding: 6px 10px; }
