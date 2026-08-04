@@ -21,7 +21,7 @@ export const GROUPS = [
     id: 'offline',
     title: '오프라인',
     icon: '🏬',
-    desc: '매장 운영 시스템과 매장 리그',
+    desc: '매장 운영 시스템',
     items: [
       {
         name: '매장직원 통합관리',
@@ -39,6 +39,14 @@ export const GROUPS = [
         status: 'external',
         desc: '오프라인 매장 매출 관리 · 주간보고 통합관리',
       },
+    ],
+  },
+  {
+    id: 'yleague',
+    title: 'Y리그',
+    icon: '🏆',
+    desc: '매장·직원 리그 현황과 누적 달성',
+    items: [
       {
         name: 'Y리그',
         href: 'https://yogibo.kr/off/y_League.html',
