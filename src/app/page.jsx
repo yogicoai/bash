@@ -2,6 +2,7 @@ import DashCard from '@/components/DashCard';
 import { ViewModeToggle } from '@/components/ViewMode';
 import { ThemeToggle } from '@/components/Theme';
 import HubSummary from '@/components/HubSummary';
+import TargetProgress from '@/components/TargetProgress';
 import { GROUPS } from '@/lib/links';
 
 export default function HomePage() {
@@ -27,6 +28,7 @@ export default function HomePage() {
 
       <div className="hub-head">오늘 매출 <span>실시간</span></div>
       <HubSummary />
+      <TargetProgress />
 
       {GROUPS.map((group) => (
         <section className="group" key={group.id}>
