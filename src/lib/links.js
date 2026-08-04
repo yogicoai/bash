@@ -9,6 +9,9 @@
  *   'planned'  이관/연결 예정 (phase 참고)
  *   'external' 다른 사이트 — 기본은 팝업(iframe)으로 dash 안에서 연다
  *
+ * guide — 그 화면의 사용 설명서 주소. 카드 우측 상단에 📖 로 붙고,
+ * 눌러도 화면이 아니라 설명서만 팝업으로 열린다.
+ *
  * windowOnly: true — 팝업(iframe) 안에서는 끝까지 동작하지 않는 화면.
  * 그래도 일단 팝업으로 연다 — 어떤 화면인지 보이는 편이 낫고, 안내와 함께
  * "크게 열기" 버튼을 띄워 새 창으로 넘어가게 한다.
@@ -27,6 +30,7 @@ export const GROUPS = [
         name: '매장직원 통합관리',
         href: 'https://yogibo.kr/off/admin.html',
         slug: 'store-staff',
+        guide: 'https://yogibo.kr/off/order/board/manual_manager.html',
         kind: '시스템설정',
         icon: '👥',
         status: 'external',
@@ -58,6 +62,15 @@ export const GROUPS = [
         desc: '좌수왕·캐스트·스토어 3종목',
       },
       {
+        name: '좌수 대량등록',
+        href: 'https://yogibo.kr/off/prevData.html',
+        slug: 'yleague-bulk',
+        kind: '시스템설정',
+        icon: '📥',
+        status: 'external',
+        desc: '이전 좌수 데이터 대량 등록',
+      },
+      {
         name: 'Y리그 누적 달성현황',
         href: 'https://yogibo.kr/off/y_admin.html',
         slug: 'yleague-admin',
@@ -77,6 +90,7 @@ export const GROUPS = [
         name: '오프라인 주문서',
         href: 'https://yogibo.kr/off/order/index.html',
         slug: 'order',
+        guide: 'https://yogibo.kr/off/order/board/manual.html',
         icon: '🧾',
         status: 'external',
         desc: '매장용 주문서 · Cafe24 상품·쿠폰 API 연동',
@@ -134,6 +148,7 @@ export const GROUPS = [
         name: '매장매니저 스케줄 관리',
         href: 'https://yogibo.kr/off/staff/schedule.html',
         slug: 'staff-schedule',
+        guide: 'https://yogibo.kr/off/staff/s_manual.html',
         // Cafe24 봇 검증을 iframe 안에서는 통과할 수 없다 → 크게 열기 안내
         windowOnly: true,
         icon: '📅',
