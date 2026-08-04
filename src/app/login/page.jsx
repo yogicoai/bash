@@ -1,5 +1,4 @@
 import LoginForm from './LoginForm';
-import { isMultiUser } from '@/lib/users';
 
 export default async function LoginPage({ searchParams }) {
   const sp = await searchParams;
@@ -14,7 +13,7 @@ export default async function LoginPage({ searchParams }) {
         <img src="/logo.png" alt="YOGI CORPORATION" className="login-logo" />
         <h1>통합 대시보드</h1>
         <p className="sub">사내 전용입니다.</p>
-        <LoginForm next={next} multiUser={isMultiUser()} />
+        <LoginForm next={next} />
       </div>
     </main>
   );

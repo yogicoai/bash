@@ -67,5 +67,15 @@ export async function verifyUser(id, password) {
   return user && ok ? { id: user.id } : null;
 }
 
-/** 로그인 화면에 아이디 입력을 보여줄지 — 단일 비밀번호 모드면 감춘다 */
-export const isMultiUser = () => Boolean(process.env.DASH_USERS && process.env.DASH_USERS.trim());
+/**
+ * 비밀번호만으로 계정 찾기 — 로그인 화면은 비밀번호 하나만 받는다.
+ * 계정마다 비밀번호가 다르면 누가 들어왔는지는 그대로 남는다.
+ * 어느 계정과도 맞지 않으면 null.
+ */
+export async function verifyByPassword(password) {
+  for (const u of listUsers()) {
+    const ok = await verifyUser(u.id, password);
+    if (ok) return ok;
+  }
+  return null;
+}
