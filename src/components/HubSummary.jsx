@@ -86,18 +86,111 @@ function SyncButton({ syncKey, onDone }) {
 }
 
 /** 채널별 오늘 판매 상품 — 자사몰은 compare/best, 스마트스토어는 analysis.productTop */
+const pctText = (v) => (typeof v === 'number' ? `${v > 0 ? '+' : ''}${(v * 100).toFixed(1)}%` : '—');
+const rate1 = (v) => (typeof v === 'number' ? `${(v * 100).toFixed(1)}%` : '—');
+
+/** 지표 한 줄 — 값 · 목표(또는 비교 대상) · 달성 여부 */
+function Metric({ label, value, note, tone }) {
+  return (
+    <div className={`kpi-cell${tone ? ` kpi-${tone}` : ''}`}>
+      <span className="kpi-label">{label}</span>
+      <b className="kpi-value">{value}</b>
+      {note && <span className="kpi-note">{note}</span>}
+    </div>
+  );
+}
+
+/**
+ * 자사몰 — 오늘의 방문·전환.
+ *
+ * 매출은 결과라서 낮게 나와도 원인을 알 수 없다. 방문이 적었는지, 들어왔는데
+ * 안 샀는지가 갈리는데 대응이 정반대다(광고 vs 상품·가격). daily-summary 가
+ * 이미 주는 값이라 새 호출 없이 그 구분을 보여준다.
+ */
+function Cafe24Check({ check, mtd }) {
+  if (!check && !mtd) return null;
+  const v = check?.visits;
+  const c = check?.purchaseRate;
+  const su = check?.signups;
+
+  return (
+    <div className="kpi-row">
+      {v && (
+        <Metric
+          label="방문"
+          value={`${fmt(v.today)}명`}
+          note={`목표 ${fmt(v.target)}명 · ${rate1(v.achieveRate)}`}
+          tone={v.achieveRate >= 1 ? 'good' : 'warn'}
+        />
+      )}
+      {c && (
+        <Metric
+          label="구매전환"
+          value={rate1(c.today)}
+          note={`목표 ${rate1(c.target)} · 주문 ${fmt(c.orders)}건`}
+          tone={c.today >= c.target ? 'good' : 'warn'}
+        />
+      )}
+      {su && (
+        <Metric
+          label="가입"
+          value={`${fmt(su.today)}명`}
+          note={`목표 ${fmt(Math.round(su.target))}명`}
+          tone={su.today >= su.target ? 'good' : 'warn'}
+        />
+      )}
+      {mtd && (
+        <Metric
+          label={`${Number(today0().slice(5, 7))}월 누적`}
+          value={won(mtd.revenue)}
+          note={`작년 ${pctText(mtd.yoy?.rate)} · 전월 ${pctText(mtd.mom?.rate)}`}
+          tone={mtd.yoy?.rate >= 0 ? 'good' : 'warn'}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * 스마트스토어 — 매출과 실입금은 다르다.
+ * 할인·수수료를 떼고 실제로 들어오는 금액(정산)까지 같이 봐야 자사몰과 나란히 비교된다.
+ */
+function SmartstoreCheck({ kpis }) {
+  if (!kpis) return null;
+  return (
+    <div className="kpi-row">
+      <Metric label="매출" value={won(kpis.revenue)} note={`주문 ${fmt(kpis.orders)}건`} />
+      <Metric label="할인" value={`-${won(kpis.discount)}`} note="즉시·쿠폰 등" />
+      <Metric label="수수료" value={`-${won(kpis.commission)}`} note={rate1(kpis.commissionRate)} />
+      <Metric label="정산(실입금)" value={won(kpis.settlement)} note={`객단가 ${won(kpis.aov)}`} tone="good" />
+    </div>
+  );
+}
+
+const today0 = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+
 function ChannelDetail({ channel }) {
   const today = todayKST();
   const data = useAsync(async () => {
     if (channel === 'cafe24') {
-      const j = await onGet('api/compare/best', { start: today, end: today });
-      return (j?.cafe24 || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales }));
+      const [best, sum] = await Promise.all([
+        onGet('api/compare/best', { start: today, end: today }),
+        onGet('api/cafe24/daily-summary', { date: today }).catch(() => null),
+      ]);
+      return {
+        rows: (best?.cafe24 || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales })),
+        check: sum?.check || null,
+        mtd: sum?.mtd || null,
+      };
     }
     const j = await onGet('api/smartstore/analysis', { start: today, end: today });
-    return (j?.productTop || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales, tier: r.tier }));
+    return {
+      rows: (j?.productTop || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales, tier: r.tier })),
+      kpis: j?.kpis || null,
+    };
   }, [channel]);
 
-  const rows = data.data || [];
+  const rows = data.data?.rows || [];
   const max = Math.max(1, ...rows.map((r) => r.sales));
   const total = rows.reduce((a, r) => a + (r.sales || 0), 0);
 
@@ -110,6 +203,8 @@ function ChannelDetail({ channel }) {
         emptyText="오늘 판매된 상품이 없습니다."
         onRetry={data.reload}
       />
+      {channel === 'cafe24' && <Cafe24Check check={data.data?.check} mtd={data.data?.mtd} />}
+      {channel === 'smartstore' && <SmartstoreCheck kpis={data.data?.kpis} />}
       {rows.length > 0 && (
         <>
           <p className="summary">

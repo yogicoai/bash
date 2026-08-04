@@ -820,3 +820,19 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+
+/* 채널 상세 위쪽 지표 줄 — 매출(결과)만이 아니라 원인·실입금까지 한눈에 */
+.kpi-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px; margin: 4px 0 14px;
+}
+.kpi-cell {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--panel);
+}
+.kpi-label { font-size: 11px; color: var(--muted); }
+.kpi-value { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+.kpi-note { font-size: 11px; color: var(--muted); }
+.kpi-good .kpi-value { color: var(--up, #16a34a); }
+.kpi-warn .kpi-value { color: var(--down, #dc2626); }
