@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { onGet, rtGet } from '@/lib/api';
 import { useAsync } from '@/hooks/useAsync';
-import { isExcludedProduct, isExcludedStore } from '@/lib/sales/config';
 
 /**
  * 이번 달 목표 달성률 — 오프라인 / 온라인 두 줄.
@@ -15,7 +14,8 @@ import { isExcludedProduct, isExcludedStore } from '@/lib/sales/config';
  *   같은 화면에 실시간 숫자와 나란히 놓이므로 라벨로도 구분한다.
  *
  * 실적
- *   오프라인 = realtime /api/orders 합계 (정산성 항목·요기보매니저영업 제외)
+ *   오프라인 = realtime /api/orders 합계 (제외 없이 전액 — 오프라인 매출 시스템의
+ *              "전체 매장 합계"와 같은 값이어야 비교가 되므로)
  *   온라인   = 자사몰 + 스마트스토어(compare/period) + 외부몰(other/overview)
  *
  * 목표
@@ -69,9 +69,10 @@ export default function TargetProgress() {
       seen.add(s);
       offTarget += Number(r.targetMonthlySales) || Number(r.targetAmount) || Number(r.monthlyTarget) || 0;
     }
-    const offActual = (orders?.orders || [])
-      .filter((o) => !isExcludedProduct(o.productName) && !isExcludedStore(o.store))
-      .reduce((a, o) => a + Number(o.amount || 0), 0);
+    // 오프라인 매출 시스템의 "전체 매장 합계"와 같은 값이어야 비교가 된다.
+    // 영업분석의 정산성 항목 제외(교환·차액 등)는 여기서 적용하지 않는다 —
+    // 목표 달성률은 그 시스템 숫자를 기준으로 판단하기 때문이다.
+    const offActual = (orders?.orders || []).reduce((a, o) => a + Number(o.amount || 0), 0);
 
     // 온라인 실적 = 자사몰·스마트스토어 + 외부몰
     const mall = (period?.rows || []).find((r) => r.channel === 'total')?.cur?.revenue || 0;
