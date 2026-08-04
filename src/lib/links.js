@@ -211,26 +211,6 @@ export const GROUPS = [
     ],
   },
   {
-    id: 'cs',
-    icon: '💬',
-    title: 'CS',
-    desc: '고객 응대',
-    items: [
-      {
-        name: 'CS 셀프가이드',
-        href: ZONES.cs,
-        slug: 'cs-guide',
-        // 자체 로그인을 쓰는데 iframe 안에서는 브라우저가 서드파티 저장소를
-        // 막아 로그인이 유지되지 않는다 → 크게 열기 안내
-        windowOnly: true,
-        icon: '🎧',
-        status: 'external',
-        desc: '배송 · 교환/환불 · A/S 상담 셀프 가이드',
-        source: 'cs-self-guide · Next 16 + TS',
-      },
-    ],
-  },
-  {
     id: 'design',
     title: '디자인',
     icon: '🎨',
@@ -288,6 +268,26 @@ export const GROUPS = [
         status: 'external',
         desc: 'VMD 집기 입출고·재고 관리',
         source: 'vmd-whouse · Next',
+      },
+    ],
+  },
+  {
+    id: 'cs',
+    icon: '💬',
+    title: 'CS',
+    desc: '고객 응대',
+    items: [
+      {
+        name: 'CS 셀프가이드',
+        href: ZONES.cs,
+        slug: 'cs-guide',
+        // 자체 로그인을 쓰는데 iframe 안에서는 브라우저가 서드파티 저장소를
+        // 막아 로그인이 유지되지 않는다 → 크게 열기 안내
+        windowOnly: true,
+        icon: '🎧',
+        status: 'external',
+        desc: '배송 · 교환/환불 · A/S 상담 셀프 가이드',
+        source: 'cs-self-guide · Next 16 + TS',
       },
     ],
   },
