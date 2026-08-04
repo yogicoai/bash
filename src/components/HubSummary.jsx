@@ -107,9 +107,9 @@ const pctText = (v) => (typeof v === 'number' ? `${v > 0 ? '+' : ''}${(v * 100).
 const rate1 = (v) => (typeof v === 'number' ? `${(v * 100).toFixed(1)}%` : '—');
 
 /** 지표 한 줄 — 값 · 목표(또는 비교 대상) · 달성 여부 */
-function Metric({ label, value, note, tone }) {
+function Metric({ label, value, note, tone, hint }) {
   return (
-    <div className={`kpi-cell${tone ? ` kpi-${tone}` : ''}`}>
+    <div className={`kpi-cell${tone ? ` kpi-${tone}` : ''}`} title={hint}>
       <span className="kpi-label">{label}</span>
       <b className="kpi-value">{value}</b>
       {note && <span className="kpi-note">{note}</span>}
@@ -137,16 +137,19 @@ function Cafe24Check({ d }) {
   // 시간 기준이 어림이라 어중간한 차이로 판단을 몰아가면 안 된다.
   const pace = (achieved) =>
     achieved == null ? null : achieved >= prog ? 'good' : achieved < prog * 0.7 ? 'warn' : null;
+  // 목표는 하루 전체 기준이라 지금 값과 그냥 견주면 오전엔 늘 미달이다.
+  // 진행률은 색 판정에만 쓰고, 근거가 궁금하면 마우스를 올려 보게 한다.
+  const paceHint = `목표는 하루 전체 기준 · 지금 ${rate1(prog)} 지남`;
 
   return (
     <div className="kpi-row">
-      <Metric label="하루 진행" value={rate1(prog)} note="이만큼 지났다" />
       {v && (
         <Metric
           label="방문"
           value={`${fmt(v.today)}명`}
-          note={`목표 ${fmt(v.target)}명(하루) · ${rate1(v.achieveRate)}`}
+          note={`목표 ${fmt(v.target)}명 · ${rate1(v.achieveRate)}`}
           tone={pace(v.achieveRate)}
+          hint={paceHint}
         />
       )}
       {c && (
@@ -161,15 +164,9 @@ function Cafe24Check({ d }) {
         <Metric
           label="가입"
           value={`${fmt(su.today)}명`}
-          note={`목표 ${fmt(Math.round(su.target))}명(하루)`}
+          note={`목표 ${fmt(Math.round(su.target))}명`}
           tone={pace(su.target ? su.today / su.target : null)}
-        />
-      )}
-      {d.lastWeek != null && (
-        <Metric
-          label={`지난주 ${d.lastWeekLabel || '같은 요일'}요일`}
-          value={won(d.lastWeek)}
-          note="하루 전체 · 오늘은 진행 중"
+          hint={paceHint}
         />
       )}
       {mtd && (
@@ -225,24 +222,14 @@ function ChannelDetail({ channel }) {
   const today = todayKST();
   const data = useAsync(async () => {
     if (channel === 'cafe24') {
-      // 지난주 같은 요일 — daily-summary 의 prevRevenue 는 "어제"라서 요일이 어긋난다.
-      // 월요일과 화요일은 유입 자체가 달라 그대로 비교하면 오해가 생긴다.
-      const lastWeek = new Date(`${today}T00:00:00+09:00`);
-      lastWeek.setDate(lastWeek.getDate() - 7);
-      const lw = lastWeek.toLocaleDateString('sv-SE');
-
-      const [best, sum, prevWeek] = await Promise.all([
+      const [best, sum] = await Promise.all([
         onGet('api/compare/best', { start: today, end: today }),
         onGet('api/cafe24/daily-summary', { date: today }).catch(() => null),
-        onGet('api/cafe24/daily-summary', { date: lw }).catch(() => null),
       ]);
       return {
         rows: (best?.cafe24 || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales })),
         check: sum?.check || null,
         mtd: sum?.mtd || null,
-        today: sum?.daily?.revenue ?? null,
-        lastWeek: prevWeek?.daily?.revenue ?? null,
-        lastWeekLabel: prevWeek?.weekdayLabel || null,
       };
     }
     const j = await onGet('api/smartstore/analysis', { start: today, end: today });
