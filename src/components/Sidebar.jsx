@@ -50,7 +50,7 @@ export default function Sidebar() {
               }
 
               // 외부 화면은 팝업(iframe)으로 — 사이드바를 유지한 채 위에 띄운다
-              if (item.slug) {
+              if (item.slug && !item.windowOnly) {
                 return (
                   <button type="button" className="sb-item" key={item.name} onClick={() => open({ ...item, href: resolveHref(item) })}>
                     <span className="sb-ic">{item.icon}</span>

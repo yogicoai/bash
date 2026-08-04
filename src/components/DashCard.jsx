@@ -10,6 +10,9 @@ const TAG = {
   planned: { cls: 'tag-planned', label: '준비 중' },
 };
 
+/** 새 창으로 열리는 화면은 배지도 그렇게 — 눌렀을 때 놀라지 않게 */
+const WINDOW_TAG = { cls: 'tag-external', label: '새 창 ↗' };
+
 /**
  * 홈 카드 — 디자인 레퍼런스 구성 그대로.
  * 아이콘이 위에 한 줄, 배지는 우측 상단 코너, 그 아래 제목·설명.
@@ -27,7 +30,7 @@ const TAG = {
  */
 export default function DashCard({ item }) {
   const { open } = useEmbed();
-  const tag = TAG[item.status] ?? TAG.planned;
+  const tag = item.windowOnly ? WINDOW_TAG : TAG[item.status] ?? TAG.planned;
 
   const tags = (
     <span className="card-tags">
@@ -77,8 +80,18 @@ export default function DashCard({ item }) {
 
   if (item.status === 'planned') return slot(<div className="card card-muted">{body}</div>);
 
-  // 카드는 예외 없이 팝업으로 연다 — 어떤 카드는 페이지가 바뀌고 어떤 카드는
-  // 팝업이 뜨면 눌러보기 전엔 알 수 없다. 화면 사이를 오가는 이동은 사이드바가 맡는다.
+  // 팝업 안에서 끝까지 못 가는 화면은 처음부터 새 창으로 보낸다.
+  // 팝업을 띄워 봐야 "여기선 안 되니 크게 열라"는 안내만 한 번 더 거치게 된다.
+  if (item.windowOnly) {
+    return slot(
+      <a className="card card-link" href={resolveHref(item)} target="_blank" rel="noopener noreferrer">
+        {body}
+      </a>,
+    );
+  }
+
+  // 나머지는 예외 없이 팝업 — 어떤 카드는 페이지가 바뀌고 어떤 카드는 팝업이 뜨면
+  // 눌러보기 전엔 알 수 없다. 화면 사이를 오가는 이동은 사이드바가 맡는다.
   return slot(
     <button
       type="button"
