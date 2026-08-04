@@ -37,5 +37,8 @@ export async function proxy(req) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // 이미지·아이콘 같은 정적 파일은 게이트에서 빼둔다.
+  // 로그인 화면의 로고도 이 경로로 오는데, 막아 두면 로그인 전에는 이미지 요청이
+  // /login 으로 튕겨 로고가 깨진 채로 보인다.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\.(?:png|jpg|jpeg|gif|svg|webp|ico|woff2?)$).*)'],
 };
