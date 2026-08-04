@@ -174,7 +174,11 @@ export default function TargetProgress() {
           </span>
         )}
         {view.elapsed > 0 && (
-          <span>{view.elapsed}/{view.total}일 · 기준선 {view.expected.toFixed(1)}%</span>
+          // "3/31일 · 기준선 9.7%" 는 3월 31일처럼 읽혔다. 무엇을 세는 숫자인지
+          // 말로 풀고, 9.7% 가 어디서 나온 값인지도 문장 안에서 드러나게 한다.
+          <span title="이 시점까지 목표대로라면 달성했어야 할 비율">
+            {view.total}일 중 {view.elapsed}일 지남 ({view.expected.toFixed(1)}%)
+          </span>
         )}
         <button type="button" className="btn btn-sm" onClick={editing ? () => setEditing(false) : openEditor}>
           {editing ? '닫기' : '목표 입력'}
