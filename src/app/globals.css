@@ -836,3 +836,14 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .kpi-note { font-size: 11px; color: var(--muted); }
 .kpi-good .kpi-value { color: var(--up, #16a34a); }
 .kpi-warn .kpi-value { color: var(--down, #dc2626); }
+
+/* 스마트스토어 유입 경로 — 방문 수가 없어 전환율 대신 쓰는 지표 */
+.inflow-row { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: -6px 0 14px; }
+.inflow-label { font-size: 11px; color: var(--muted); margin-right: 2px; }
+.inflow-chip {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px;
+  font-size: 12px; background: var(--panel);
+}
+.inflow-chip b { font-weight: 700; }
+.inflow-chip i { font-style: normal; font-size: 11px; color: var(--muted); }

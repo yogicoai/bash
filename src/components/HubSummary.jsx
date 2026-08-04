@@ -86,6 +86,23 @@ function SyncButton({ syncKey, onDone }) {
 }
 
 /** 채널별 오늘 판매 상품 — 자사몰은 compare/best, 스마트스토어는 analysis.productTop */
+/**
+ * 오늘이 얼마나 지났나 (0~1).
+ *
+ * 목표(방문·가입)는 하루 전체 기준인데 지금 값은 진행 중이다. 그대로 나누면
+ * 오전에는 무조건 미달로 보인다. 그래서 시간 진행률을 같이 두고 견준다.
+ *
+ * ⚠ 단순히 흐른 시간으로 계산한다. 실제 쇼핑은 저녁에 몰리므로 오전에는 이
+ *   기준이 실제보다 후하다 — 그래서 "뒤처짐" 판정은 넉넉히 밀린 경우에만 한다.
+ */
+function dayProgressKST() {
+  const hm = new Date().toLocaleTimeString('en-GB', {
+    timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+  const [h, m] = hm.split(':').map(Number);
+  return Math.min(1, (h * 60 + m) / (24 * 60));
+}
+
 const pctText = (v) => (typeof v === 'number' ? `${v > 0 ? '+' : ''}${(v * 100).toFixed(1)}%` : '—');
 const rate1 = (v) => (typeof v === 'number' ? `${(v * 100).toFixed(1)}%` : '—');
 
@@ -115,14 +132,21 @@ function Cafe24Check({ d }) {
   const c = check?.purchaseRate;
   const su = check?.signups;
 
+  const prog = dayProgressKST();
+  // 앞서면 초록, 눈에 띄게 밀렸을 때만 빨강. 애매한 구간은 색을 주지 않는다 —
+  // 시간 기준이 어림이라 어중간한 차이로 판단을 몰아가면 안 된다.
+  const pace = (achieved) =>
+    achieved == null ? null : achieved >= prog ? 'good' : achieved < prog * 0.7 ? 'warn' : null;
+
   return (
     <div className="kpi-row">
+      <Metric label="하루 진행" value={rate1(prog)} note="이만큼 지났다" />
       {v && (
         <Metric
           label="방문"
           value={`${fmt(v.today)}명`}
-          note={`목표 ${fmt(v.target)}명 · ${rate1(v.achieveRate)}`}
-          tone={v.achieveRate >= 1 ? 'good' : 'warn'}
+          note={`목표 ${fmt(v.target)}명(하루) · ${rate1(v.achieveRate)}`}
+          tone={pace(v.achieveRate)}
         />
       )}
       {c && (
@@ -137,8 +161,8 @@ function Cafe24Check({ d }) {
         <Metric
           label="가입"
           value={`${fmt(su.today)}명`}
-          note={`목표 ${fmt(Math.round(su.target))}명`}
-          tone={su.today >= su.target ? 'good' : 'warn'}
+          note={`목표 ${fmt(Math.round(su.target))}명(하루)`}
+          tone={pace(su.target ? su.today / su.target : null)}
         />
       )}
       {d.lastWeek != null && (
@@ -164,15 +188,34 @@ function Cafe24Check({ d }) {
  * 스마트스토어 — 매출과 실입금은 다르다.
  * 할인·수수료를 떼고 실제로 들어오는 금액(정산)까지 같이 봐야 자사몰과 나란히 비교된다.
  */
-function SmartstoreCheck({ kpis }) {
+function SmartstoreCheck({ kpis, inflow }) {
   if (!kpis) return null;
+  const top = (inflow || []).filter((r) => r.orders > 0).slice(0, 3);
+  const totalOrders = (inflow || []).reduce((a, r) => a + (r.orders || 0), 0);
+
   return (
+    <>
     <div className="kpi-row">
       <Metric label="매출" value={won(kpis.revenue)} note={`주문 ${fmt(kpis.orders)}건`} />
       <Metric label="할인" value={`-${won(kpis.discount)}`} note="즉시·쿠폰 등" />
       <Metric label="수수료" value={`-${won(kpis.commission)}`} note={rate1(kpis.commissionRate)} />
       <Metric label="정산(실입금)" value={won(kpis.settlement)} note={`객단가 ${won(kpis.aov)}`} tone="good" />
     </div>
+    {top.length > 0 && (
+      // 스마트스토어는 방문 수를 주지 않아 전환율을 낼 수 없다.
+      // 대신 "어디를 거쳐 샀는지"로 유입을 본다.
+      <div className="inflow-row">
+        <span className="inflow-label">유입 경로</span>
+        {top.map((r) => (
+          <span className="inflow-chip" key={r.inflow}>
+            {r.inflow}
+            <b>{fmt(r.orders)}건</b>
+            {totalOrders > 0 && <i>{rate1(r.orders / totalOrders)}</i>}
+          </span>
+        ))}
+      </div>
+    )}
+    </>
   );
 }
 
@@ -206,6 +249,7 @@ function ChannelDetail({ channel }) {
     return {
       rows: (j?.productTop || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales, tier: r.tier })),
       kpis: j?.kpis || null,
+      inflow: j?.inflow || null,
     };
   }, [channel]);
 
@@ -223,7 +267,7 @@ function ChannelDetail({ channel }) {
         onRetry={data.reload}
       />
       {channel === 'cafe24' && <Cafe24Check d={data.data} />}
-      {channel === 'smartstore' && <SmartstoreCheck kpis={data.data?.kpis} />}
+      {channel === 'smartstore' && <SmartstoreCheck kpis={data.data?.kpis} inflow={data.data?.inflow} />}
       {rows.length > 0 && (
         <>
           <p className="summary">
