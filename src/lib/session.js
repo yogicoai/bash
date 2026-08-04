@@ -6,7 +6,13 @@
  */
 
 export const COOKIE_NAME = 'dash_session';
-export const MAX_AGE_SEC = 60 * 60 * 12; // 12시간
+export const MAX_AGE_SEC = 60 * 60 * 24; // 24시간 — 한 번 넣으면 그날은 다시 안 묻는다
+
+/**
+ * 남은 시간이 이보다 적으면 쿠키를 새로 발급한다(슬라이딩 갱신).
+ * 아침에 로그인하고 종일 쓰다가 저녁에 갑자기 튕기는 걸 막는다.
+ */
+export const RENEW_BEFORE_SEC = 60 * 60 * 12;
 
 const enc = new TextEncoder();
 

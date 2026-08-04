@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { COOKIE_NAME, verify } from '@/lib/session';
+import { COOKIE_NAME, MAX_AGE_SEC, RENEW_BEFORE_SEC, cookieOptions, sign, verify } from '@/lib/session';
 
 /** 로그인 없이 열리는 경로 */
 const PUBLIC = ['/login', '/api/auth/login'];
@@ -12,7 +12,18 @@ export async function proxy(req) {
   }
 
   const session = await verify(req.cookies.get(COOKIE_NAME)?.value);
-  if (session) return NextResponse.next();
+  if (session) {
+    // 쓰고 있는 동안에는 만료가 다가오면 조용히 연장한다 —
+    // 작업 중에 로그인 화면으로 튕기는 일이 없도록.
+    const left = session.exp - Math.floor(Date.now() / 1000);
+    if (left < RENEW_BEFORE_SEC) {
+      const res = NextResponse.next();
+      const token = await sign({ u: session.u, exp: Math.floor(Date.now() / 1000) + MAX_AGE_SEC });
+      res.cookies.set(COOKIE_NAME, token, cookieOptions());
+      return res;
+    }
+    return NextResponse.next();
+  }
 
   // API는 리다이렉트 대신 401 — fetch 호출부가 HTML을 받고 파싱 실패하는 걸 막는다.
   if (pathname.startsWith('/api/')) {
