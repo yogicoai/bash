@@ -9,8 +9,10 @@ import { isExcludedProduct, isExcludedStore } from '@/lib/sales/config';
  * 이번 달 목표 달성률 — 오프라인 / 온라인 두 줄.
  *
  * ⚠ 갱신 시점이 위쪽 실시간 매출과 다르다.
- *   이카운트가 매일 오전 10시에 올라가므로 이 값은 "오늘 오전 10시 기준"이다.
- *   같은 화면에 실시간 숫자와 나란히 놓이므로 라벨로 반드시 구분한다.
+ *   이카운트가 매일 오전 10시에 올라가므로 실적은 "어제까지"다.
+ *   따라서 기준선(경과율)도 어제까지로 계산해야 한다 — 오늘을 포함하면
+ *   아직 오지 않은 하루가 분모에 들어가 실제보다 뒤처져 보인다.
+ *   같은 화면에 실시간 숫자와 나란히 놓이므로 라벨로도 구분한다.
  *
  * 실적
  *   오프라인 = realtime /api/orders 합계 (정산성 항목·요기보매니저영업 제외)
@@ -75,8 +77,15 @@ export default function TargetProgress() {
     const mall = (period?.rows || []).find((r) => r.channel === 'total')?.cur?.revenue || 0;
     const outside = (other?.groups || []).reduce((a, g) => a + Number(g.sales || 0), 0);
 
+    // 실적이 어제까지이므로 경과일도 어제까지로 센다 (API의 elapsedDays 는 오늘을 포함)
+    const y = new Date(`${today}T00:00:00+09:00`);
+    y.setDate(y.getDate() - 1);
+    const asOf = y.toLocaleDateString('sv-SE');
+    const elapsed = asOf.slice(0, 7) === month ? Number(asOf.slice(8, 10)) : 0;
+
     return {
-      elapsed: target?.elapsedDays ?? null,
+      asOf,
+      elapsed,
       total: target?.totalDays ?? lastDay,
       offline: { target: offTarget, actual: offActual },
       online: {
@@ -101,7 +110,7 @@ export default function TargetProgress() {
       };
     };
     return {
-      expected, elapsed: d.elapsed, total: d.total, outside: d.online.outside,
+      expected, elapsed: d.elapsed, total: d.total, asOf: d.asOf, outside: d.online.outside,
       rows: [build('offline', '오프라인', d.offline), build('online', '온라인', d.online)],
     };
   }, [data.data, custom]);
@@ -150,9 +159,13 @@ export default function TargetProgress() {
     <section className="target-strip">
       <div className="target-head">
         <strong>{month.slice(5)}월 목표 달성률</strong>
-        <span className="target-basis">오늘 오전 10시 기준</span>
-        {view.elapsed != null && (
-          <span>{view.elapsed}/{view.total}일 경과 · 기준선 {view.expected.toFixed(0)}%</span>
+        {view.asOf && (
+          <span className="target-basis">
+            {Number(view.asOf.slice(5, 7))}월 {Number(view.asOf.slice(8, 10))}일까지 · 오늘 10시 반영
+          </span>
+        )}
+        {view.elapsed > 0 && (
+          <span>{view.elapsed}/{view.total}일 · 기준선 {view.expected.toFixed(1)}%</span>
         )}
         <button type="button" className="btn btn-sm" onClick={editing ? () => setEditing(false) : openEditor}>
           {editing ? '닫기' : '목표 입력'}
