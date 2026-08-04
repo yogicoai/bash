@@ -7,7 +7,10 @@
  * status:
  *   'ready'    dash 안에서 동작
  *   'planned'  이관/연결 예정 (phase 참고)
- *   'external' Cafe24에 그대로 두고 링크만 (Cafe24 API에 물려 있어 이관 대상 아님)
+ *   'external' 다른 사이트 — 기본은 팝업(iframe)으로 dash 안에서 연다
+ *
+ * newTab: true — 자체 로그인이 있는 화면. iframe 안에서는 브라우저가 서드파티
+ * 저장소를 막아 로그인이 유지되지 않으므로 새 창으로 띄운다.
  */
 
 import { ZONES } from './zones';
@@ -36,20 +39,20 @@ export const GROUPS = [
         desc: '오프라인 매장 매출 관리 · 주간보고 통합관리',
       },
       {
-        name: 'Y리그 현황',
-        href: '/yleague/status',
+        name: 'Y리그',
+        href: 'https://yogibo.kr/off/y_League.html',
+        slug: 'yleague',
         icon: '🏆',
-        status: 'ready',
+        status: 'external',
         desc: '좌수왕·캐스트·스토어 3종목',
-        source: 'realtime · jwasu/dashboard + orders + managers',
       },
       {
-        name: 'Y리그 누적랭킹',
-        href: '/yleague/ranking',
+        name: 'Y리그 누적 달성현황',
+        href: 'https://yogibo.kr/off/y_admin.html',
+        slug: 'yleague-admin',
         icon: '🥇',
-        status: 'ready',
+        status: 'external',
         desc: '월별 1등 누적 (달성/미달성)',
-        source: 'realtime · 월별 dashboard + orders',
       },
     ],
   },
@@ -221,14 +224,16 @@ export const GROUPS = [
       {
         name: 'CS 셀프가이드',
         href: ZONES.cs,
-        slug: 'zone-cs',
+        // 자체 로그인(24시간 유지)을 쓰는데 iframe 안에서는 브라우저가
+        // 서드파티 저장소를 막아 로그인이 유지되지 않는다 → 새 창으로 연다
+        newTab: true,
         icon: '🎧',
         status: 'external',
         desc: '배송 · 교환/환불 · A/S 상담 셀프 가이드',
         source: 'cs-self-guide · Next 16 + TS',
       },
     ],
-  },,
+  },
   {
     id: 'design',
     title: '디자인',

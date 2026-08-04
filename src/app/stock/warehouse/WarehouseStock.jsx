@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { rtGet } from '@/lib/api';
 import { useAsync } from '@/hooks/useAsync';
 import { colorOf, displayGroup } from '@/lib/colors';
@@ -15,6 +15,7 @@ const SORTS = {
 
 export default function WarehouseStock({ initialStore }) {
   const router = useRouter();
+  const params = useSearchParams();
   const [store, setStore] = useState(initialStore || '');
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState(null);
@@ -73,7 +74,13 @@ export default function WarehouseStock({ initialStore }) {
     setGroup(null);
     setQuery('');
     // 링크 공유가 되도록 URL에도 반영 (기존 ?store= 링크와 호환)
-    router.replace(next ? `/stock/warehouse?store=${encodeURIComponent(next)}` : '/stock/warehouse');
+    // 기존 쿼리를 갈아엎지 않는다 — 팝업으로 열렸을 때 붙는 bare=1 이 날아가면
+    // 팝업 안에 사이드바가 다시 그려진다.
+    const q = new URLSearchParams(params?.toString() || '');
+    if (next) q.set('store', next);
+    else q.delete('store');
+    const qs = q.toString();
+    router.replace(qs ? `/stock/warehouse?${qs}` : '/stock/warehouse');
   }
 
   function toggleSort(column) {

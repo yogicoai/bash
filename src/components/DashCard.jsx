@@ -35,7 +35,7 @@ export default function DashCard({ item }) {
   if (item.status === 'planned') return <div className="card card-muted">{body}</div>;
 
   // 외부 화면은 항상 팝업. 한 페이지 모드에서는 내부 화면도 팝업으로 띄운다.
-  const asPopup = item.slug || mode === 'popup';
+  const asPopup = !item.newTab && (item.slug || mode === 'popup');
   if (asPopup) {
     return (
       <button

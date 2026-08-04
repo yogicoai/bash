@@ -1,5 +1,4 @@
 import './globals.css';
-import './yleague.css';
 import AppFrame from '@/components/AppFrame';
 
 export const metadata = {
