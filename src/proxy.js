@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { COOKIE_NAME, MAX_AGE_SEC, RENEW_BEFORE_SEC, cookieOptions, sign, verify } from '@/lib/session';
 
 /** 로그인 없이 열리는 경로 */
-const PUBLIC = ['/login', '/api/auth/login'];
+// /api/auth/diag 는 로그인 설정을 확인하기 위한 임시 경로 — 원인을 잡으면 지운다
+const PUBLIC = ['/login', '/api/auth/login', '/api/auth/diag'];
 
 export async function proxy(req) {
   const { pathname } = req.nextUrl;
