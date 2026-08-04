@@ -9,6 +9,11 @@
  *
  * 계정을 지우려면 DASH_USERS 에서 그 줄만 빼면 된다(= 즉시 철회).
  * DASH_USERS 가 비어 있으면 기존 DASH_PASSWORD 단일 비밀번호로 동작한다.
+ *
+ * ⚠ 둘 다 있으면 DASH_USERS 가 이긴다 — DASH_PASSWORD 는 아예 보지 않는다.
+ *   배포 환경에 DASH_USERS 가 남아 있으면 DASH_PASSWORD 를 아무리 바꿔도
+ *   로그인이 되지 않는다(실제로 겪었다). 단일 비밀번호로 쓸 거라면
+ *   DASH_USERS 를 지워야 한다.
  */
 
 const LEGACY_ID = 'yogibo';
