@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { onGet, rtGet } from '@/lib/api';
 import { useAsync } from '@/hooks/useAsync';
 
@@ -38,6 +38,8 @@ export default function TargetProgress() {
   const month = today.slice(0, 7);
   const [custom, setCustom] = useState({});
   const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(null);
+  const detailRef = useRef(null);
   const [draft, setDraft] = useState({ offline: '', online: '' });
 
   useEffect(() => {
@@ -90,6 +92,24 @@ export default function TargetProgress() {
     const mall = (period?.rows || []).find((r) => r.channel === 'total')?.cur?.revenue || 0;
     const outside = (other?.groups || []).reduce((a, g) => a + Number(g.sales || 0), 0);
 
+    // 카드를 펼쳤을 때 볼 것 —
+    //   오프라인은 원장이 있어 일자별로 쪼갤 수 있다.
+    //   온라인은 일자별 시리즈를 주는 API 가 없어(compare/daily 등 404) 채널별로 본다.
+    const byDate = new Map();
+    for (const o of orders?.orders || []) {
+      const d = String(o.date || '').slice(0, 10);
+      if (!d || d > end) continue;
+      byDate.set(d, (byDate.get(d) || 0) + Number(o.amount || 0));
+    }
+    const offDaily = [...byDate.entries()].map(([date, sales]) => ({ date, sales })).sort((a, b) => a.date.localeCompare(b.date));
+
+    const onChannels = [
+      ...(period?.rows || [])
+        .filter((r) => r.channel !== 'total')
+        .map((r) => ({ name: r.channel === 'cafe24' ? '자사몰 (Cafe24)' : '스마트스토어', sales: r.cur?.revenue || 0 })),
+      ...(other?.groups || []).map((g) => ({ name: g.group, sales: Number(g.sales || 0) })),
+    ].filter((r) => r.sales > 0).sort((a, b) => b.sales - a.sales);
+
     // 경과일도 같은 기준(어제까지) — API의 elapsedDays 는 오늘을 포함한다
     const elapsed = inMonth ? Number(asOf.slice(8, 10)) : 0;
 
@@ -97,6 +117,8 @@ export default function TargetProgress() {
       asOf,
       elapsed,
       total: target?.totalDays ?? lastDay,
+      offDaily,
+      onChannels,
       offline: { target: offTarget, actual: offActual },
       online: {
         target: (target?.cafe24?.target || 0) + (target?.smartstore?.target || 0),
@@ -120,6 +142,7 @@ export default function TargetProgress() {
     };
     return {
       expected, elapsed: d.elapsed, total: d.total, asOf: d.asOf,
+      offDaily: d.offDaily, onChannels: d.onChannels,
       rows: [build('offline', '오프라인', d.offline), build('online', '온라인', d.online)],
     };
   }, [data.data, custom]);
@@ -210,7 +233,16 @@ export default function TargetProgress() {
       {/* 보러 오는 건 "몇 % 왔나"다. 그 숫자를 가장 크게 두고 막대·금액은 뒤에 둔다. */}
       <div className="target-cards">
         {view.rows.map((r) => (
-          <div className="target-card" key={r.key}>
+          <button
+            type="button"
+            className={`target-card ${open === r.key ? 'target-card-open' : ''}`}
+            key={r.key}
+            onClick={() => {
+              const next = open === r.key ? null : r.key;
+              setOpen(next);
+              if (next) setTimeout(() => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
+            }}
+          >
             <div className="target-card-top">
               <span className="target-card-label">
                 {r.label}
@@ -238,11 +270,86 @@ export default function TargetProgress() {
 
             <div className="target-card-amt">
               <b>{eok(r.actual)}</b> / {eok(r.target)}
+              <span className="target-card-more">{open === r.key ? '접기 ▲' : '자세히 ▼'}</span>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
+      {open && (
+        <div className="target-detail" ref={detailRef}>
+          {open === 'offline'
+            ? <DailyList rows={view.offDaily} />
+            : <ChannelList rows={view.onChannels} />}
+        </div>
+      )}
+
     </section>
+  );
+}
+
+/** 오프라인 일자별 — 원장이 있어 날짜로 쪼갤 수 있다 */
+function DailyList({ rows }) {
+  if (!rows?.length) return <p className="summary">아직 이번 달 매출이 없습니다.</p>;
+  const max = Math.max(1, ...rows.map((r) => r.sales));
+  const total = rows.reduce((a, r) => a + r.sales, 0);
+  const dow = ['일', '월', '화', '수', '목', '금', '토'];
+
+  return (
+    <>
+      <p className="summary">일자별 <b>{rows.length}일</b> · 합계 <b>{fmt(total)}원</b></p>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr><th>날짜</th><th className="right">매출</th><th style={{ width: 220 }} /></tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.date}>
+                <td className="strong">
+                  {Number(r.date.slice(5, 7))}월 {Number(r.date.slice(8, 10))}일
+                  <span className="dim"> ({dow[new Date(`${r.date}T00:00:00+09:00`).getDay()]})</span>
+                </td>
+                <td className="right mono strong">{fmt(r.sales)}원</td>
+                <td><div className="minibar"><div style={{ width: `${(r.sales / max) * 100}%` }} /></div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+/**
+ * 온라인 채널별 — 일자별 시리즈를 주는 API 가 없어 채널로 나눈다.
+ * 외부몰은 몰 이름 그대로 펴서 어디서 나온 매출인지 보이게 한다.
+ */
+function ChannelList({ rows }) {
+  if (!rows?.length) return <p className="summary">아직 이번 달 매출이 없습니다.</p>;
+  const max = Math.max(1, ...rows.map((r) => r.sales));
+  const total = rows.reduce((a, r) => a + r.sales, 0);
+
+  return (
+    <>
+      <p className="summary">채널 <b>{rows.length}곳</b> · 합계 <b>{fmt(total)}원</b></p>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr><th>채널</th><th className="right">매출</th><th className="right">비중</th><th style={{ width: 180 }} /></tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.name}>
+                <td className="strong">{r.name}</td>
+                <td className="right mono strong">{fmt(r.sales)}원</td>
+                <td className="right mono dim">{((r.sales / total) * 100).toFixed(0)}%</td>
+                <td><div className="minibar"><div style={{ width: `${(r.sales / max) * 100}%` }} /></div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

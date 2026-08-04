@@ -895,3 +895,10 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .seat-rate { margin-left: 8px; padding-left: 8px; border-left: 1px solid var(--line); font-size: 11px; font-weight: 700; }
 .seat-rate.up { color: var(--up, #16a34a); }
 .seat-rate.down { color: var(--down, #dc2626); }
+
+/* 목표 카드를 눌러 펼치기 */
+button.target-card { width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+button.target-card:hover { border-color: var(--accent, #3b82f6); }
+.target-card-open { border-color: var(--accent, #3b82f6); }
+.target-card-more { float: right; font-size: 11px; color: var(--accent, #3b82f6); font-weight: 700; }
+.target-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
