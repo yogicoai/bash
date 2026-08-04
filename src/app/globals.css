@@ -871,3 +871,26 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 /* 실시간과 어제 기준을 줄로 가른다 */
 .hub-head-sub { margin-top: 22px; }
 .hub-daily { grid-template-columns: 1fr; }
+
+/* 목표 달성률 — 금액보다 "몇 %"를 앞세운 카드 */
+.target-cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px; margin-top: 12px;
+}
+.target-card {
+  padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--panel);
+}
+.target-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.target-card-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.target-card-label em { font-style: normal; color: var(--brand, #f97316); margin-left: 2px; }
+.target-card-rate {
+  display: block; margin: 6px 0 10px;
+  font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1;
+  color: var(--up, #16a34a);
+}
+.target-card-rate.behind { color: var(--down, #dc2626); }
+.target-card-rate i { font-style: normal; font-size: 17px; font-weight: 700; margin-left: 2px; }
+.target-card .target-bar { margin: 0; }
+.target-card-amt { margin-top: 9px; font-size: 12px; color: var(--muted); }
+.target-card-amt b { color: var(--text, inherit); font-weight: 700; }

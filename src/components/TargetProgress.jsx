@@ -174,10 +174,10 @@ export default function TargetProgress() {
           </span>
         )}
         {view.elapsed > 0 && (
-          // "3/31일 · 기준선 9.7%" 는 3월 31일처럼 읽혔다. 무엇을 세는 숫자인지
-          // 말로 풀고, 9.7% 가 어디서 나온 값인지도 문장 안에서 드러나게 한다.
-          <span title="이 시점까지 목표대로라면 달성했어야 할 비율">
-            {view.total}일 중 {view.elapsed}일 지남 ({view.expected.toFixed(1)}%)
+          // 이 숫자가 하는 말은 "지금쯤이면 이만큼 왔어야 한다"다.
+          // 날짜 계산("31일 중 3일 지남")을 보여주면 그 뜻을 사람이 다시 옮겨야 한다.
+          <span title={`${month.slice(5)}월 ${view.total}일 중 ${view.elapsed}일 지남`}>
+            지금쯤이면 <b>{view.expected.toFixed(1)}%</b>
           </span>
         )}
         <button type="button" className="btn btn-sm" onClick={editing ? () => setEditing(false) : openEditor}>
@@ -207,26 +207,38 @@ export default function TargetProgress() {
         </div>
       )}
 
-      <div className="target-rows">
+      {/* 보러 오는 건 "몇 % 왔나"다. 그 숫자를 가장 크게 두고 막대·금액은 뒤에 둔다. */}
+      <div className="target-cards">
         {view.rows.map((r) => (
-          <div className="target-row" key={r.key}>
-            <div className="target-label">
-              {r.label}
-              {r.edited && <em title="직접 입력한 목표">*</em>}
-            </div>
-            <div className="target-bar">
-              {view.expected != null && <i className="target-mark" style={{ left: `${Math.min(view.expected, 100)}%` }} />}
-              <i className="target-fill" style={{ width: `${Math.min(r.rate || 0, 100)}%` }} />
-            </div>
-            <div className="target-num">
-              <b>{r.rate != null ? `${r.rate.toFixed(1)}%` : '—'}</b>
+          <div className="target-card" key={r.key}>
+            <div className="target-card-top">
+              <span className="target-card-label">
+                {r.label}
+                {r.edited && <em title="직접 입력한 목표">*</em>}
+              </span>
               {r.gap != null && (
-                <span className={`target-gap ${r.gap >= 0 ? 'up' : 'down'}`}>
+                <span
+                  className={`target-gap ${r.gap >= 0 ? 'up' : 'down'}`}
+                  title={`지금쯤 기준(${view.expected?.toFixed(1)}%)보다 ${Math.abs(r.gap).toFixed(0)}%p ${r.gap >= 0 ? '앞섬' : '뒤처짐'}`}
+                >
                   {r.gap >= 0 ? '▲' : '▼'} {Math.abs(r.gap).toFixed(0)}p
                 </span>
               )}
             </div>
-            <div className="target-amt">{eok(r.actual)} / {eok(r.target)}</div>
+
+            <strong className={`target-card-rate ${r.gap != null && r.gap < 0 ? 'behind' : ''}`}>
+              {r.rate != null ? r.rate.toFixed(1) : '—'}
+              <i>%</i>
+            </strong>
+
+            <div className="target-bar">
+              {view.expected != null && <i className="target-mark" style={{ left: `${Math.min(view.expected, 100)}%` }} />}
+              <i className="target-fill" style={{ width: `${Math.min(r.rate || 0, 100)}%` }} />
+            </div>
+
+            <div className="target-card-amt">
+              <b>{eok(r.actual)}</b> / {eok(r.target)}
+            </div>
           </div>
         ))}
       </div>

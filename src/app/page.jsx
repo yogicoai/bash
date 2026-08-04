@@ -29,8 +29,8 @@ export default function HomePage() {
         </div>
       </header>
 
-      <HubSummary />
       <TargetProgress />
+      <HubSummary />
 
       {GROUPS.map((group) => (
         <section className="group" key={group.id}>
