@@ -3,6 +3,38 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ZONE_COMMANDS, isLocal } from '@/lib/zones';
 
+/** 화면 자체 비밀번호 안내 — dash 로그인을 통과한 사람에게만 서버가 내려준다 */
+function ScreenPassword({ slug }) {
+  const [pw, setPw] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!slug) return;
+    fetch(`/api/screen-password?slug=${encodeURIComponent(slug)}`)
+      .then((r) => r.json())
+      .then((j) => setPw(j.password))
+      .catch(() => {});
+  }, [slug]);
+
+  if (!pw) return null;
+  return (
+    <div className="embed-pw">
+      <span>이 화면 비밀번호</span>
+      <code>{pw}</code>
+      <button
+        type="button"
+        className="btn btn-sm"
+        onClick={() => navigator.clipboard.writeText(pw).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1600);
+        })}
+      >
+        {copied ? '복사됨 ✓' : '복사'}
+      </button>
+    </div>
+  );
+}
+
 const EmbedContext = createContext({ open: () => {} });
 
 /** 외부 화면을 팝업(iframe)으로 띄우는 컨텍스트 — 사이드바·카드 어디서든 open(item) */
@@ -54,6 +86,7 @@ export function EmbedProvider({ children }) {
               </div>
             )}
             <iframe className="embed-frame" src={item.href} title={item.name} />
+            <ScreenPassword slug={item.slug} />
           </div>
         </div>
       )}

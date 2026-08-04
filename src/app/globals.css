@@ -745,3 +745,13 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .page-logo { width: 200px; height: auto; display: block; margin-bottom: 8px; }
 :root[data-theme='dark'] .page-logo { filter: brightness(0) invert(1); }
 .page-head h1 { font-size: 20px; }
+.embed-pw {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  padding: 9px 16px; border-top: 1px solid var(--border); background: var(--panel-2);
+  font-size: 12px; color: var(--muted);
+}
+.embed-pw code {
+  background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px;
+  padding: 3px 10px; font-size: 13px; font-weight: 700; color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em;
+}
