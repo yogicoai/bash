@@ -25,12 +25,12 @@ function Frame({ children }) {
   );
 }
 
-export default function AppFrame({ children }) {
+export default function AppFrame({ children, initialMode }) {
   const pathname = usePathname();
   if (pathname === '/login') return children;
 
   return (
-    <ViewModeProvider>
+    <ViewModeProvider initialMode={initialMode}>
       <EmbedProvider>
         <Suspense fallback={<div className="app"><div className="app-main">{children}</div></div>}>
           <Frame>{children}</Frame>

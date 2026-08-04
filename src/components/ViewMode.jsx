@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { DEFAULT_MODE, VIEW_KEY, normalizeMode, readPref, writePref } from '@/lib/prefs';
 
 /**
  * 보기 모드 두 가지.
@@ -10,33 +11,39 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
  * 내부 화면도 같은 출처라 iframe으로 띄울 수 있다.
  * 다만 사이드바가 중첩되므로 팝업으로 열 때는 ?bare=1 을 붙여 셸을 벗긴다.
  *
- * 처음 들어오면 "한 페이지"로 보인다. 한 번 고르면 그 선택이 남는다.
+ * 처음 들어오면 "한 페이지"로 보인다. 한 번 고르면 그 선택이 이 브라우저에 남아,
+ * 다음에 들어올 때도 그대로 열린다.
+ *
+ * 선택은 쿠키에 담아 서버가 첫 HTML 을 그릴 때 이미 알고 있게 한다 —
+ * 그래서 initialMode 로 시작한다. localStorage 였을 때는 한 페이지가 잠깐
+ * 보였다가 내비게이션으로 바뀌었다.
  */
-const KEY = 'dash.viewMode';
-const DEFAULT_MODE = 'popup';
 const ViewModeContext = createContext({ mode: DEFAULT_MODE, setMode: () => {}, ready: false });
 
-export function ViewModeProvider({ children }) {
-  const [mode, setModeState] = useState(DEFAULT_MODE);
+export function ViewModeProvider({ children, initialMode }) {
+  const [mode, setModeState] = useState(() => normalizeMode(initialMode));
   const [ready, setReady] = useState(false);
 
+  // 쿠키로 옮기기 전에 localStorage 에 골라둔 사람들을 한 번만 넘겨받는다.
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(KEY);
-      if (saved === 'popup' || saved === 'nav') setModeState(saved);
-    } catch {
-      /* 저장값이 없거나 접근 불가면 기본값 */
+    if (!readPref(VIEW_KEY)) {
+      let saved = null;
+      try {
+        saved = localStorage.getItem(VIEW_KEY);
+      } catch {
+        /* 접근 불가면 기본값 */
+      }
+      if (saved === 'popup' || saved === 'nav') {
+        setModeState(saved);
+        writePref(VIEW_KEY, saved);
+      }
     }
     setReady(true);
   }, []);
 
   const setMode = useCallback((next) => {
     setModeState(next);
-    try {
-      localStorage.setItem(KEY, next);
-    } catch {
-      /* 저장 실패해도 이번 세션에는 반영된다 */
-    }
+    writePref(VIEW_KEY, next);
   }, []);
 
   return <ViewModeContext.Provider value={{ mode, setMode, ready }}>{children}</ViewModeContext.Provider>;
