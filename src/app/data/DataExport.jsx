@@ -63,6 +63,102 @@ function ConfigDownload() {
   );
 }
 
+
+/**
+ * Codex로 데이터 가져오기 — MCP 와 쓰임이 다르다.
+ *   MCP   Claude 안에서 물어보면 그 자리에서 답한다 (대화)
+ *   Codex 안내서를 주면 원하는 데이터를 직접 가져와 가공한다 (분석·파일)
+ *
+ * 안내서(EXPORT-API.md)는 onlineData 저장소의 docs/ 를 복사해 둔 것이다.
+ * 원본이 바뀌면 이 파일도 같이 갱신해야 한다.
+ */
+const CODEX_PROMPT = `첨부한 안내서(EXPORT-API.md)를 참고해서 아래에서 데이터를 가져와 분석해줘.
+주소: https://on-iota-three.vercel.app/api/export
+열쇠(토큰): {{TOKEN}}
+
+여기에 원하는 분석을 적으세요
+예) 지난달 온라인·오프라인 매출이랑 광고비 다 가져와서 8월 프로모션안이랑 비교해줘`;
+
+function CodexGuide() {
+  const [token, setToken] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/codex-token', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((j) => setToken(j.token))
+      .catch(() => {});
+  }, []);
+
+  const prompt = CODEX_PROMPT.replace('{{TOKEN}}', token || '(별도로 전달받은 토큰을 여기에)');
+
+  return (
+    <section className="card" style={{ marginBottom: 16 }}>
+      <div className="card-head">
+        <div>
+          <h2>Codex로 데이터 가져와 분석하기</h2>
+          <p>
+            안내서 파일 하나만 첨부하면 Codex가 매출·광고·목표·재고를 직접 가져와 가공합니다.
+            엑셀로 정리하거나 여러 데이터를 엮어 비교할 때 씁니다.
+          </p>
+        </div>
+      </div>
+
+      <p className="summary">
+        MCP는 <b>Claude에게 물어보면 그 자리에서 답하는</b> 방식이고,
+        Codex는 <b>데이터를 직접 가져와 파일로 만들거나 깊게 분석하는</b> 방식입니다. 필요에 따라 골라 쓰면 됩니다.
+      </p>
+
+      <ol className="steps">
+        <li>
+          <b>안내서를 내려받습니다</b>
+          <span>아래 버튼으로 EXPORT-API.md 를 받으세요.</span>
+        </li>
+        <li>
+          <b>Codex에 그 파일을 첨부합니다</b>
+          <span>내용을 읽을 필요는 없습니다 — Codex가 읽고 알아서 처리합니다.</span>
+        </li>
+        <li>
+          <b>아래 문장을 붙여넣고, 원하는 분석을 이어서 적습니다</b>
+          <span>기간은 &ldquo;지난달&rdquo;, &ldquo;최근 7일&rdquo;처럼 말하듯 적으면 됩니다.</span>
+        </li>
+      </ol>
+
+      <div className="codex-prompt">
+        <pre>{prompt}</pre>
+        <button
+          type="button"
+          className="btn btn-sm"
+          onClick={() => navigator.clipboard.writeText(prompt).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1600);
+          })}
+        >
+          {copied ? '복사됨 ✓' : '문장 복사'}
+        </button>
+      </div>
+
+      <div className="toolbar">
+        <a className="btn btn-download" href="/docs/EXPORT-API.md" download="EXPORT-API.md">
+          ↓ 안내서 받기 (EXPORT-API.md)
+        </a>
+      </div>
+
+      <p className="summary">
+        가져올 수 있는 것 — <b>매출</b>(온라인 채널·상품별 / 오프라인 매장·사원·상품별) ·
+        <b> 광고</b>(매체별 광고비·노출·클릭·전환) · <b>방문</b>(방문·가입·구매) ·
+        <b> 목표</b>(온라인 월 목표 · 오프라인 매장별 목표) · <b>재고</b>(품목·색상별 수량).
+        고객 개인정보는 포함되지 않습니다.
+      </p>
+      {!token && (
+        <p className="summary dim">
+          토큰이 이 화면에 설정돼 있지 않습니다 — 별도로 전달받은 값을 문장의 &ldquo;열쇠(토큰)&rdquo; 자리에 넣어 주세요.
+        </p>
+      )}
+    </section>
+  );
+}
+
 export default function McpGuide() {
   return (
     <>
@@ -122,6 +218,8 @@ export default function McpGuide() {
           <ConfigDownload />
         </div>
       </section>
+
+      <CodexGuide />
 
       <section className="card">
         <div className="card-head">

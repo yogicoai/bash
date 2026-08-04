@@ -857,3 +857,20 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .store-items .summary { margin: 2px 0 8px; }
 .table-sub { font-size: 12px; }
 .table-sub th, .table-sub td { padding: 6px 10px; }
+
+/* Codex에 붙여넣을 문장 */
+.codex-prompt { position: relative; margin: 12px 0; }
+.codex-prompt pre {
+  margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--panel); font-size: 12px; line-height: 1.7;
+  white-space: pre-wrap; word-break: break-word;
+}
+.codex-prompt .btn { position: absolute; top: 10px; right: 10px; }
+
+/* 실시간 화면 안의 이번 달 목표 달성률 */
+.month-target { margin: 0 0 20px; }
+.month-target-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.month-target-head strong { font-size: 14px; }
+.month-target-head .dim { font-size: 11px; color: var(--muted); }
+.month-target-rate { margin-left: auto; font-size: 18px; }
+.month-target-amt { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
