@@ -17,6 +17,7 @@ import { useAsync } from '@/hooks/useAsync';
  *   오프라인 = realtime /api/orders 합계 (제외 없이 전액 — 오프라인 매출 시스템의
  *              "전체 매장 합계"와 같은 값이어야 비교가 되므로)
  *   온라인   = 자사몰 + 스마트스토어(compare/period) + 외부몰(other/overview)
+ *              조회 구간을 어제까지로 끊는다 — 온라인 일일매출 리포트와 같은 값이 되도록.
  *
  * 목표
  *   기본값은 API에서 읽고(오프라인은 매장 목표 합, 온라인은 채널 목표 합),
@@ -50,7 +51,16 @@ export default function TargetProgress() {
   const data = useAsync(async () => {
     const lastDay = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
     const start = `${month}-01`;
-    const end = `${month}-${lastDay}`;
+
+    // 실적은 오늘 오전 10시에 올라온 "어제까지" 값이다.
+    // 조회 구간도 어제로 끊어야 온라인 일일매출 리포트와 같은 숫자가 된다 —
+    // 월말까지 열어두면 cafe24·스마트스토어 실시간 API가 오늘치까지 얹어
+    // 리포트보다 크게 나오고, 경과일(어제까지)과도 기준이 어긋난다.
+    const y = new Date(`${today}T00:00:00+09:00`);
+    y.setDate(y.getDate() - 1);
+    const asOf = y.toLocaleDateString('sv-SE');
+    const inMonth = asOf.slice(0, 7) === month;
+    const end = inMonth ? asOf : `${month}-${lastDay}`;
 
     const [dash, orders, target, period, other] = await Promise.all([
       rtGet('api/jwasu/dashboard', { searchType: 'month', month, date: end, startDate: start, endDate: end }).catch(() => null),
@@ -72,17 +82,16 @@ export default function TargetProgress() {
     // 오프라인 매출 시스템의 "전체 매장 합계"와 같은 값이어야 비교가 된다.
     // 영업분석의 정산성 항목 제외(교환·차액 등)는 여기서 적용하지 않는다 —
     // 목표 달성률은 그 시스템 숫자를 기준으로 판단하기 때문이다.
-    const offActual = (orders?.orders || []).reduce((a, o) => a + Number(o.amount || 0), 0);
+    const offActual = (orders?.orders || [])
+      .filter((o) => String(o.date || '').slice(0, 10) <= end)
+      .reduce((a, o) => a + Number(o.amount || 0), 0);
 
     // 온라인 실적 = 자사몰·스마트스토어 + 외부몰
     const mall = (period?.rows || []).find((r) => r.channel === 'total')?.cur?.revenue || 0;
     const outside = (other?.groups || []).reduce((a, g) => a + Number(g.sales || 0), 0);
 
-    // 실적이 어제까지이므로 경과일도 어제까지로 센다 (API의 elapsedDays 는 오늘을 포함)
-    const y = new Date(`${today}T00:00:00+09:00`);
-    y.setDate(y.getDate() - 1);
-    const asOf = y.toLocaleDateString('sv-SE');
-    const elapsed = asOf.slice(0, 7) === month ? Number(asOf.slice(8, 10)) : 0;
+    // 경과일도 같은 기준(어제까지) — API의 elapsedDays 는 오늘을 포함한다
+    const elapsed = inMonth ? Number(asOf.slice(8, 10)) : 0;
 
     return {
       asOf,
@@ -92,7 +101,6 @@ export default function TargetProgress() {
       online: {
         target: (target?.cafe24?.target || 0) + (target?.smartstore?.target || 0),
         actual: mall + outside,
-        outside,
       },
     };
   }, []);
@@ -111,7 +119,7 @@ export default function TargetProgress() {
       };
     };
     return {
-      expected, elapsed: d.elapsed, total: d.total, asOf: d.asOf, outside: d.online.outside,
+      expected, elapsed: d.elapsed, total: d.total, asOf: d.asOf,
       rows: [build('offline', '오프라인', d.offline), build('online', '온라인', d.online)],
     };
   }, [data.data, custom]);
@@ -219,7 +227,6 @@ export default function TargetProgress() {
         ))}
       </div>
 
-      <p className="target-foot">온라인은 자사몰·스마트스토어 + 외부몰({eok(view.outside)}) 합계입니다.</p>
     </section>
   );
 }

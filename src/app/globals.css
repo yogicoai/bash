@@ -793,4 +793,3 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .target-edit .input { min-width: 170px; }
 .target-note { flex-basis: 100%; margin: 2px 0 0; font-size: 11px; color: var(--muted); }
 .target-label em { color: var(--accent); font-style: normal; font-weight: 700; margin-left: 3px; }
-.target-foot { margin: 12px 0 0; font-size: 11px; color: var(--muted); }
