@@ -33,6 +33,12 @@ import { buildRawOrders } from '@/lib/sales/normalize';
 const fmt = (n) => Math.round(n || 0).toLocaleString();
 const won = (n) => `${fmt(n)}원`;
 const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+/** 이카운트는 매일 오전 10시에 어제치를 올린다 — "확정된 하루"는 늘 어제다 */
+const yesterdayKST = () => {
+  const d = new Date(`${todayKST()}T00:00:00+09:00`);
+  d.setDate(d.getDate() - 1);
+  return d.toLocaleDateString('sv-SE');
+};
 
 /**
  * 동기화 버튼 — 페이지를 열 때 자동으로 한 번 돌기 때문에 평소엔 누를 일이 없다.
@@ -221,26 +227,84 @@ function SmartstoreCheck({ kpis, inflow }) {
  * 외부몰 — 분류별로 무엇이 팔렸는지.
  * 몰 목록은 아래 표가 맡고, 여기서는 상품 분류(소파·바디필로우·케어 등)를 본다.
  */
-function OtherCheck({ d }) {
-  if (!d?.totals) return null;
-  const cats = d.categories || [];
-  const sum = cats.reduce((a, c) => a + Number(c.sales || 0), 0);
+/** 펼친 상세의 제목 — 채널마다 기준 시점이 달라 그것까지 이름에 담는다 */
+/** 이름·금액만 있는 목록 — 어제 매장별처럼 더 볼 게 없는 경우 */
+function SimpleBreakdown({ rows, unit = '항목' }) {
+  if (!rows?.length) return <p className="summary">어제 판매가 없습니다.</p>;
+  const max = Math.max(1, ...rows.map((r) => r.sales));
+  const total = rows.reduce((a, r) => a + r.sales, 0);
 
   return (
     <>
-      <div className="kpi-row">
-        <Metric label="매출" value={won(d.totals.sales)} note={`주문 ${fmt(d.totals.orders)}건`} />
-        <Metric label="판매 수량" value={`${fmt(d.totals.qty)}개`} note={`몰 ${fmt(d.totals.groups)}곳`} />
-        <Metric label="객단가" value={won(d.totals.aov)} note="매출 ÷ 주문" />
+      <p className="summary">{unit} <b>{fmt(rows.length)}곳</b> · 합계 <b>{won(total)}</b></p>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th className="col-narrow center">순위</th>
+              <th>{unit}</th>
+              <th className="right">매출</th>
+              <th style={{ width: 140 }}>비중</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.name}>
+                <td className="center"><span className="rank-badge">{i + 1}</span></td>
+                <td className="strong">{r.name}</td>
+                <td className="right mono strong">{won(r.sales)}</td>
+                <td><div className="minibar"><div style={{ width: `${(r.sales / max) * 100}%` }} /></div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      {cats.length > 0 && (
-        <div className="inflow-row">
-          <span className="inflow-label">분류별</span>
-          {cats.map((c) => (
+    </>
+  );
+}
+
+/**
+ * 어제 온라인 — 채널 셋으로 나누고, 외부몰은 몰·분류까지 한 단계 더 들어간다.
+ * 외부몰만 여러 곳이 뭉쳐 있어 그대로 두면 어디서 나온 매출인지 알 수 없다.
+ */
+function OnlineYesterday({ d }) {
+  if (!d) return <p className="summary">불러오는 중…</p>;
+  const max = Math.max(1, ...d.rows.map((r) => r.sales));
+  const catSum = (d.categories || []).reduce((a, c) => a + Number(c.sales || 0), 0);
+
+  return (
+    <>
+      <p className="summary">채널 <b>{fmt(d.rows.length)}곳</b> · 합계 <b>{won(d.total)}</b></p>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>채널</th>
+              <th className="right">매출</th>
+              <th className="right">비중</th>
+              <th style={{ width: 160 }} />
+            </tr>
+          </thead>
+          <tbody>
+            {d.rows.map((r) => (
+              <tr key={r.name}>
+                <td className="strong">{r.name}</td>
+                <td className="right mono strong">{won(r.sales)}</td>
+                <td className="right mono dim">{d.total ? `${((r.sales / d.total) * 100).toFixed(0)}%` : '—'}</td>
+                <td><div className="minibar"><div style={{ width: `${(r.sales / max) * 100}%` }} /></div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {d.categories?.length > 0 && (
+        <div className="inflow-row" style={{ marginTop: 14 }}>
+          <span className="inflow-label">외부몰 상품 분류</span>
+          {d.categories.map((c) => (
             <span className="inflow-chip" key={c.category}>
-              {c.category}
-              <b>{won(c.sales)}</b>
-              <i>{c.qty}개{sum ? ` · ${((c.sales / sum) * 100).toFixed(0)}%` : ''}</i>
+              {c.category}<b>{won(c.sales)}</b>
+              <i>{catSum ? `${((c.sales / catSum) * 100).toFixed(0)}%` : ''}</i>
             </span>
           ))}
         </div>
@@ -248,6 +312,14 @@ function OtherCheck({ d }) {
     </>
   );
 }
+
+const DETAIL_TITLE = {
+  offline: '실시간 매장별 매출',
+  cafe24: '자사몰 오늘 판매 상품',
+  smartstore: '스마트스토어 오늘 판매 상품',
+  'y-offline': '어제 매장별 매출',
+  'y-online': '어제 온라인 채널별 매출',
+};
 
 const today0 = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
@@ -265,23 +337,6 @@ function ChannelDetail({ channel }) {
         mtd: sum?.mtd || null,
       };
     }
-    if (channel === 'other') {
-      // 외부몰은 이카운트 일 단위라 어제 하루를 본다 (타일과 같은 기준)
-      const y = new Date(`${today}T00:00:00+09:00`);
-      y.setDate(y.getDate() - 1);
-      const d = y.toLocaleDateString('sv-SE');
-      const j = await onGet('api/other/overview', { start: d, end: d });
-      return {
-        rows: (j?.groups || []).map((g) => ({
-          name: g.group, qty: g.qty, sales: g.sales, orders: g.orders,
-          subs: (g.subs || []).map((x) => x.store).filter((x) => x && x !== g.group),
-        })),
-        categories: j?.byCategory || [],
-        totals: j?.totals || null,
-        date: d,
-      };
-    }
-
     const j = await onGet('api/smartstore/analysis', { start: today, end: today });
     return {
       rows: (j?.productTop || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales, tier: r.tier })),
@@ -300,24 +355,22 @@ function ChannelDetail({ channel }) {
         loading={data.loading}
         error={data.error}
         empty={!data.loading && !data.error && rows.length === 0}
-        emptyText={channel === 'other' ? '어제 외부몰 판매가 없습니다.' : '오늘 판매된 상품이 없습니다.'}
+        emptyText="오늘 판매된 상품이 없습니다."
         onRetry={data.reload}
       />
       {channel === 'cafe24' && <Cafe24Check d={data.data} />}
       {channel === 'smartstore' && <SmartstoreCheck kpis={data.data?.kpis} inflow={data.data?.inflow} />}
-      {channel === 'other' && <OtherCheck d={data.data} />}
       {rows.length > 0 && (
         <>
           <p className="summary">
-            {channel === 'other' ? '몰' : '상품'} <b>{rows.length}{channel === 'other' ? '곳' : '종'}</b>
-            {' · 합계 '}<b>{won(total)}</b>
+            상품 <b>{rows.length}종</b> · 합계 <b>{won(total)}</b>
           </p>
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
                   <th className="col-narrow center">순위</th>
-                  <th>{channel === 'other' ? '몰' : '상품'}</th>
+                  <th>상품</th>
                   {channel === 'smartstore' && <th>등급</th>}
                   <th className="right">수량</th>
                   <th className="right">매출</th>
@@ -404,7 +457,24 @@ export default function HubSummary() {
     const todayAmount = todayLines.reduce((a, o) => a + Number(o.amount || 0), 0);
     const todayOrders = buildRawOrders(todayLines).length;
 
-    return { month, amount, oc: orders.length, aov: orders.length ? amount / orders.length : 0, todayAmount, todayOrders };
+    // 어제 — 이카운트가 오늘 10시에 올린 확정된 하루. 목표 달성률과 같은 기준이다.
+    const yLines = lines.filter((o) => String(o.date || '').slice(0, 10) === yesterdayKST());
+    const byStore = new Map();
+    for (const o of yLines) {
+      const st = o.store || '미지정';
+      byStore.set(st, (byStore.get(st) || 0) + Number(o.amount || 0));
+    }
+    const yStores = [...byStore.entries()]
+      .map(([name, sales]) => ({ name, sales }))
+      .sort((a, b) => b.sales - a.sales);
+
+    return {
+      month, amount, oc: orders.length, aov: orders.length ? amount / orders.length : 0,
+      todayAmount, todayOrders,
+      yAmount: yLines.reduce((a, o) => a + Number(o.amount || 0), 0),
+      yOrders: buildRawOrders(yLines).length,
+      yStores,
+    };
   }, []);
 
   // Cafe24 — 당월 누적
@@ -433,22 +503,35 @@ export default function HubSummary() {
   }, []);
 
   /**
-   * 외부몰 — 쿠팡·오늘의집·현대 이지웰 등 자사몰·스마트스토어를 뺀 나머지.
-   * 이카운트 일 단위 적재라 오늘치가 없다. 그래서 어제 하루를 본다.
+   * 어제 온라인 전체 — 자사몰 + 스마트스토어 + 외부몰.
+   *
+   * 위쪽 실시간 타일은 채널이 각각 서 있지만, 어제는 "확정된 하루"라
+   * 목표 달성률과 같은 구분(온라인/오프라인)으로 묶어 보는 게 맞다.
+   * 그래야 "어제 얼마 팔았나 → 이번 달 얼마나 왔나"가 한 흐름으로 읽힌다.
    */
-  const other = useAsync(async () => {
-    const y = new Date(`${todayKST()}T00:00:00+09:00`);
-    y.setDate(y.getDate() - 1);
-    const d = y.toLocaleDateString('sv-SE');
-    const j = await onGet('api/other/overview', { start: d, end: d });
-    const groups = j?.groups || [];
+  const onlineY = useAsync(async () => {
+    const d = yesterdayKST();
+    const [cafe, ss, other] = await Promise.all([
+      onGet('api/cafe24/daily-summary', { date: d }).catch(() => null),
+      onGet('api/smartstore/analysis', { start: d, end: d }).catch(() => null),
+      onGet('api/other/overview', { start: d, end: d }).catch(() => null),
+    ]);
+
+    // 외부몰을 하나로 뭉치지 않고 몰 이름 그대로 편다 — "외부몰 105만"보다
+    // "쿠팡 31만 · 현대 이지웰 30만"이 어디서 나온 매출인지 바로 말해 준다.
+    const rows = [
+      { name: '자사몰 (Cafe24)', sales: cafe?.daily?.revenue || 0 },
+      { name: '스마트스토어', sales: ss?.kpis?.revenue || 0, orders: ss?.kpis?.orders || 0 },
+      ...(other?.groups || []).map((g) => ({ name: g.group, sales: g.sales, qty: g.qty, orders: g.orders })),
+    ]
+      .filter((r) => r.sales > 0)
+      .sort((a, b) => b.sales - a.sales);
+
     return {
       date: d,
-      sales: j?.totals?.sales || 0,
-      orders: j?.totals?.orders || 0,
-      malls: groups.length,
-      // 한 줄을 넓게 쓰므로 어느 몰에서 나온 매출인지 바로 보여준다
-      top: groups.slice(0, 4).map((g) => `${g.group} ${fmt(g.sales)}`),
+      total: rows.reduce((a, r) => a + r.sales, 0),
+      rows,
+      categories: other?.byCategory || [],
     };
   }, []);
 
@@ -492,17 +575,26 @@ export default function HubSummary() {
       onSynced: () => smartstore.reload(),
       state: smartstore,
     },
+    // 어제 — 목표 달성률과 같은 구분(온라인/오프라인)으로 묶는다
+    {
+      href: '/sales/today',
+      detailKey: 'y-offline',
+      label: '오프라인',
+      value: offline.data ? won(offline.data.yAmount) : null,
+      sub: offline.data ? `매장 ${fmt(offline.data.yStores.length)}곳 · 구매 ${fmt(offline.data.yOrders)}건` : null,
+      state: offline,
+    },
     {
       href: 'https://on-iota-three.vercel.app/',
       external: true,
-      detailKey: 'other',
-      label: '외부몰',
-      value: other.data ? won(other.data.sales) : null,
-      // 다른 타일은 오늘인데 여기만 어제다 — 그 사실을 타일에 적어 오해를 막는다
-      sub: other.data
-        ? `${other.data.top.join(' · ')}${other.data.malls > 4 ? ` 외 ${other.data.malls - 4}곳` : ''}`
+      detailKey: 'y-online',
+      label: '온라인',
+      value: onlineY.data ? won(onlineY.data.total) : null,
+      sub: onlineY.data
+        ? onlineY.data.rows.slice(0, 3).map((r) => `${r.name.replace(' (Cafe24)', '')} ${fmt(r.sales)}`).join(' · ')
+          + (onlineY.data.rows.length > 3 ? ` 외 ${onlineY.data.rows.length - 3}곳` : '')
         : null,
-      state: other,
+      state: onlineY,
     },
   ];
 
@@ -532,8 +624,8 @@ export default function HubSummary() {
         if (t.detailKey && mode === 'popup') {
           const on = openDetail === t.detailKey;
           const more =
-            t.detailKey === 'offline' ? '매장별 보기'
-            : t.detailKey === 'other' ? '몰별 보기'
+            t.detailKey === 'offline' || t.detailKey === 'y-offline' ? '매장별 보기'
+            : t.detailKey === 'y-online' ? '채널별 보기'
             : '판매 상품 보기';
           return (
             <div className="hub-wrap" key={t.label}>
@@ -562,8 +654,8 @@ export default function HubSummary() {
         );
   };
 
-  const live = tiles.filter((t) => t.detailKey !== 'other');
-  const daily = tiles.filter((t) => t.detailKey === 'other');
+  const live = tiles.filter((t) => !String(t.detailKey).startsWith('y-'));
+  const daily = tiles.filter((t) => String(t.detailKey).startsWith('y-'));
 
   return (
     <>
@@ -575,23 +667,23 @@ export default function HubSummary() {
       {daily.length > 0 && (
         <>
           <div className="hub-head hub-head-sub">
-            어제 매출 <span>오늘 오전 10시 반영 · 이카운트 일 단위</span>
+            어제 매출 <span>이카운트 오늘 오전 10시 반영</span>
           </div>
-          <div className="hub hub-daily">{daily.map(renderTile)}</div>
+          <div className="hub">{daily.map(renderTile)}</div>
         </>
       )}
 
       {mode === 'popup' && openDetail && (
         <div className="hub-detail" ref={detailRef}>
           <div className="hub-detail-head">
-            <h2>
-              {openDetail === 'offline' ? '실시간 매장별 매출'
-                : openDetail === 'cafe24' ? '자사몰 오늘 판매 상품'
-                : '스마트스토어 오늘 판매 상품'}
-            </h2>
+            {/* 채널이 늘 때마다 빠뜨리지 않도록 한 곳에서 이름을 정한다 */}
+            <h2>{DETAIL_TITLE[openDetail] || '상세'}</h2>
             <button type="button" className="btn btn-sm" onClick={() => toggleDetail(openDetail)}>접기 ▲</button>
           </div>
-          {openDetail === 'offline' ? <TodaySales /> : <ChannelDetail channel={openDetail} />}
+          {openDetail === 'offline' ? <TodaySales />
+            : openDetail === 'y-offline' ? <SimpleBreakdown rows={offline.data?.yStores} unit="매장" />
+            : openDetail === 'y-online' ? <OnlineYesterday d={onlineY.data} />
+            : <ChannelDetail channel={openDetail} />}
         </div>
       )}
     </>
