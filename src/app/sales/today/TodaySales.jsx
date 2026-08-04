@@ -19,11 +19,7 @@ import { buildRawOrders } from '@/lib/sales/normalize';
  *
  * 매장 행을 누르면 그 매장이 오늘 무엇을 팔았는지 펼쳐진다. 상품명·색상이
  * 원 데이터에 이미 들어 있어 추가 호출은 없다.
- *
- * 이번 달 목표 달성률도 함께 보여준다 — 매장 전체 합계 기준이다.
- * 오늘 하루만 보면 잘한 날인지 알 수 없고, 달 목표에 견줘야 판단이 선다.
- * 실적은 오늘치까지 포함한다(이 화면 자체가 실시간이라 오늘을 빼면 어색하다).
- * 허브의 "목표 달성률"은 어제까지 기준이라 오늘 판매분만큼 차이가 난다.
+
  */
 const REFRESH_MS = 15 * 60_000;
 const fmt = (n) => Math.round(n || 0).toLocaleString();
@@ -37,41 +33,16 @@ export default function TodaySales() {
   const today = todayKST();
 
   const data = useAsync(async () => {
-    const month = today.slice(0, 7);
-    const lastDay = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
-
-    const [json, dash] = await Promise.all([
-      rtGet('api/orders', { month, store: 'all' }),
-      rtGet('api/jwasu/dashboard', {
-        searchType: 'month', month,
-        date: `${month}-${lastDay}`, startDate: `${month}-01`, endDate: `${month}-${lastDay}`,
-      }).catch(() => null),
-    ]);
-
-    const all = json?.orders || [];
-    const lines = all.filter(
+    const json = await rtGet('api/orders', { month: today.slice(0, 7), store: 'all' });
+    const lines = (json?.orders || []).filter(
       (o) =>
         String(o.date || '').slice(0, 10) === today &&
         !isExcludedProduct(o.productName) &&
         !isExcludedStore(o.store),
     );
 
-    // 이번 달 누적 — 오프라인 매출 시스템의 "전체 매장 합계"와 같은 기준이라
-    // 영업분석용 제외 규칙은 적용하지 않는다.
-    const monthAmount = all.reduce((a, o) => a + Number(o.amount || 0), 0);
-
-    // 목표는 같은 매장이 여러 행으로 오므로 매장당 한 번만 더한다
-    const seen = new Set();
-    let target = 0;
-    for (const r of dash?.data || []) {
-      const st = r.storeName;
-      if (!st || seen.has(st)) continue;
-      seen.add(st);
-      target += Number(r.targetMonthlySales) || Number(r.targetAmount) || Number(r.monthlyTarget) || 0;
-    }
-
     setFetchedAt(new Date());
-    return { lines, monthAmount, target, elapsed: Number(today.slice(8, 10)), total: lastDay };
+    return { lines };
   }, [tick]);
 
   useEffect(() => {
@@ -162,8 +133,6 @@ export default function TodaySales() {
           <div className="hub-sub">매출 ÷ 구매건수</div>
         </div>
       </section>
-
-      <MonthTarget d={data.data} />
 
       <DataState
         loading={data.loading && !data.data}
@@ -269,33 +238,3 @@ function StoreItems({ items }) {
   );
 }
 
-/** 이번 달 목표 달성률 — 매장 전체 합계 */
-function MonthTarget({ d }) {
-  if (!d?.target) return null;
-  const rate = (d.monthAmount / d.target) * 100;
-  // 오늘까지 지났으면 이만큼은 달성했어야 한다는 기준선
-  const expected = (d.elapsed / d.total) * 100;
-  const gap = rate - expected;
-  const eok = (n) => {
-    const v = Math.round((n || 0) / 10000);
-    return v >= 10000 ? `${(v / 10000).toFixed(1)}억` : `${fmt(v)}만`;
-  };
-
-  return (
-    <section className="month-target">
-      <div className="month-target-head">
-        <strong>이번 달 목표 달성률</strong>
-        <span className="dim">매장 전체 · 오늘까지 포함</span>
-        <b className="month-target-rate">{rate.toFixed(1)}%</b>
-        <span className={`target-gap ${gap >= 0 ? 'up' : 'down'}`}>
-          {gap >= 0 ? '▲' : '▼'} {Math.abs(gap).toFixed(0)}p
-        </span>
-      </div>
-      <div className="target-bar" title={`${d.elapsed}/${d.total}일 지남 · 기준 ${expected.toFixed(1)}%`}>
-        <i className="target-mark" style={{ left: `${Math.min(expected, 100)}%` }} />
-        <i className="target-fill" style={{ width: `${Math.min(rate, 100)}%` }} />
-      </div>
-      <p className="month-target-amt">{eok(d.monthAmount)} / {eok(d.target)}</p>
-    </section>
-  );
-}
