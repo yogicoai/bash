@@ -14,9 +14,11 @@ export default function HomePage() {
     <main className="shell">
       <header className="page-head">
         <div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="YOGI CORPORATION" className="page-logo" />
-          <h1>통합 대시보드</h1>
+          <div className="page-brand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="YOGI CORPORATION" className="page-logo" />
+            <h1>통합 대시보드</h1>
+          </div>
           <p>오프라인·영업·온라인·마케팅·B2B·CS 데이터를 한곳에서</p>
         </div>
         <div className="actions">
