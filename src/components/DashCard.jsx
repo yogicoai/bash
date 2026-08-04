@@ -1,7 +1,7 @@
 'use client';
 
 import { useEmbed } from './EmbedModal';
-import { popupHref, useViewMode } from './ViewMode';
+import { popupHref } from './ViewMode';
 import { resolveHref } from '@/lib/zones';
 
 const TAG = {
@@ -27,7 +27,6 @@ const TAG = {
  */
 export default function DashCard({ item }) {
   const { open } = useEmbed();
-  const { mode } = useViewMode();
   const tag = TAG[item.status] ?? TAG.planned;
 
   const tags = (
@@ -78,24 +77,15 @@ export default function DashCard({ item }) {
 
   if (item.status === 'planned') return slot(<div className="card card-muted">{body}</div>);
 
-  // 외부 화면은 항상 팝업. 한 페이지 모드에서는 내부 화면도 팝업으로 띄운다.
-  const asPopup = item.slug || mode === 'popup';
-  if (asPopup) {
-    return slot(
-      <button
-        type="button"
-        className="card card-link"
-        onClick={() => open({ ...item, href: popupHref(resolveHref(item)) })}
-      >
-        {body}
-      </button>,
-    );
-  }
-
-  const newTab = item.status === 'external';
+  // 카드는 예외 없이 팝업으로 연다 — 어떤 카드는 페이지가 바뀌고 어떤 카드는
+  // 팝업이 뜨면 눌러보기 전엔 알 수 없다. 화면 사이를 오가는 이동은 사이드바가 맡는다.
   return slot(
-    <a className="card card-link" href={item.href} {...(newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+    <button
+      type="button"
+      className="card card-link"
+      onClick={() => open({ ...item, href: popupHref(resolveHref(item)) })}
+    >
       {body}
-    </a>,
+    </button>,
   );
 }
