@@ -107,7 +107,9 @@ function Metric({ label, value, note, tone }) {
  * 안 샀는지가 갈리는데 대응이 정반대다(광고 vs 상품·가격). daily-summary 가
  * 이미 주는 값이라 새 호출 없이 그 구분을 보여준다.
  */
-function Cafe24Check({ check, mtd }) {
+function Cafe24Check({ d }) {
+  if (!d) return null;
+  const { check, mtd } = d;
   if (!check && !mtd) return null;
   const v = check?.visits;
   const c = check?.purchaseRate;
@@ -137,6 +139,13 @@ function Cafe24Check({ check, mtd }) {
           value={`${fmt(su.today)}명`}
           note={`목표 ${fmt(Math.round(su.target))}명`}
           tone={su.today >= su.target ? 'good' : 'warn'}
+        />
+      )}
+      {d.lastWeek != null && (
+        <Metric
+          label={`지난주 ${d.lastWeekLabel || '같은 요일'}요일`}
+          value={won(d.lastWeek)}
+          note="하루 전체 · 오늘은 진행 중"
         />
       )}
       {mtd && (
@@ -173,14 +182,24 @@ function ChannelDetail({ channel }) {
   const today = todayKST();
   const data = useAsync(async () => {
     if (channel === 'cafe24') {
-      const [best, sum] = await Promise.all([
+      // 지난주 같은 요일 — daily-summary 의 prevRevenue 는 "어제"라서 요일이 어긋난다.
+      // 월요일과 화요일은 유입 자체가 달라 그대로 비교하면 오해가 생긴다.
+      const lastWeek = new Date(`${today}T00:00:00+09:00`);
+      lastWeek.setDate(lastWeek.getDate() - 7);
+      const lw = lastWeek.toLocaleDateString('sv-SE');
+
+      const [best, sum, prevWeek] = await Promise.all([
         onGet('api/compare/best', { start: today, end: today }),
         onGet('api/cafe24/daily-summary', { date: today }).catch(() => null),
+        onGet('api/cafe24/daily-summary', { date: lw }).catch(() => null),
       ]);
       return {
         rows: (best?.cafe24 || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales })),
         check: sum?.check || null,
         mtd: sum?.mtd || null,
+        today: sum?.daily?.revenue ?? null,
+        lastWeek: prevWeek?.daily?.revenue ?? null,
+        lastWeekLabel: prevWeek?.weekdayLabel || null,
       };
     }
     const j = await onGet('api/smartstore/analysis', { start: today, end: today });
@@ -203,7 +222,7 @@ function ChannelDetail({ channel }) {
         emptyText="오늘 판매된 상품이 없습니다."
         onRetry={data.reload}
       />
-      {channel === 'cafe24' && <Cafe24Check check={data.data?.check} mtd={data.data?.mtd} />}
+      {channel === 'cafe24' && <Cafe24Check d={data.data} />}
       {channel === 'smartstore' && <SmartstoreCheck kpis={data.data?.kpis} />}
       {rows.length > 0 && (
         <>
@@ -348,7 +367,7 @@ export default function HubSummary() {
       label: '자사몰 (Cafe24)',
       value: cafe24.data ? won(cafe24.data.revenue) : null,
       sub: cafe24.data
-        ? `지난주 같은 요일 ${won(cafe24.data.prev)}${pct(cafe24.data.rate) ? ` · ${pct(cafe24.data.rate)}` : ''}`
+        ? `어제 ${won(cafe24.data.prev)}${pct(cafe24.data.rate) ? ` · ${pct(cafe24.data.rate)}` : ''} · 오늘은 진행 중`
         : null,
       syncKey: 'cafe24',
       onSynced: () => cafe24.reload(),
