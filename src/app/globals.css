@@ -66,16 +66,12 @@ a { color: inherit; text-decoration: none; }
 .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
 .sb-brand {
-  display: flex; align-items: center; gap: 11px;
-  padding: 16px 14px; border-bottom: 1px solid #1e293b; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
+  padding: 20px 16px 16px; border-bottom: 1px solid #1e293b; flex-shrink: 0;
 }
-.sb-logo-box {
-  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-  background: #fff; display: flex; align-items: center; justify-content: center; padding: 6px;
-}
-.sb-logo-box img { width: 100%; height: auto; object-fit: contain; }
-.sb-brand-text { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.35; min-width: 0; }
-.sb-brand-text small { display: block; font-size: 11px; font-weight: 400; color: var(--sidebar-muted); }
+/* 로고 원본이 검정 단색 + 투명배경 — 다크 사이드바에서는 흰색으로 반전 */
+.sb-logo { width: 100%; max-width: 164px; height: auto; display: block; filter: brightness(0) invert(1); }
+.sb-brand-sub { font-size: 11px; color: var(--sidebar-muted); letter-spacing: .02em; }
 
 .sb-nav { flex: 1; padding: 12px 10px; }
 .sb-group { margin-bottom: 16px; }
@@ -651,7 +647,7 @@ button.card { text-align: left; font-family: inherit; color: var(--text); cursor
 :root[data-theme='dark'] .section-info b { color: #cfe0ff; }
 :root[data-theme='dark'] .modal-overlay,
 :root[data-theme='dark'] .embed-overlay { background: rgba(0,0,0,.65); }
-:root[data-theme='dark'] .sb-logo-box { background: #e6edf3; }
+
 :root[data-theme='dark'] .login-logo { filter: brightness(0) invert(1); }
 :root[data-theme='dark'] .embed-frame { background: #fff; }
 :root[data-theme='dark'] .code-block { background: #0b0e12; }
@@ -744,3 +740,8 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 }
 .hub-sync:hover { color: var(--accent); border-color: var(--accent); }
 .hub-sync:disabled { opacity: .6; cursor: default; }
+
+/* 홈 제목 자리의 로고 — 다크에서는 흰색으로 반전 */
+.page-logo { width: 200px; height: auto; display: block; margin-bottom: 8px; }
+:root[data-theme='dark'] .page-logo { filter: brightness(0) invert(1); }
+.page-head h1 { font-size: 20px; }

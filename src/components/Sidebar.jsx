@@ -28,15 +28,10 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <Link href="/" className="sb-brand">
-        {/* 로고가 검정 단색이라 레퍼런스처럼 흰 박스 위에 얹는다 */}
-        <span className="sb-logo-box">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="YOGI CORPORATION" />
-        </span>
-        <span className="sb-brand-text">
-          요기코퍼레이션
-          <small>통합 대시보드</small>
-        </span>
+        {/* 로고에 이미 사명이 들어 있어 이름을 글자로 또 쓰지 않는다 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="YOGI CORPORATION" className="sb-logo" />
+        <span className="sb-brand-sub">통합 대시보드</span>
       </Link>
 
       <nav className="sb-nav">
