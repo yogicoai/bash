@@ -13,7 +13,7 @@ import { isExcludedProduct, isExcludedStore } from '@/lib/sales/config';
 import { buildRawOrders } from '@/lib/sales/normalize';
 
 /**
- * 허브 요약 — 오늘 매출을 채널별로. 클릭하지 않고도 보이게 한다.
+ * 허브 요약 — 채널별 매출. 클릭하지 않고도 보이게 한다.
  *
  * 갱신 시점이 다르므로 라벨로 구분한다.
  *   실시간 매출 = 오프라인 매장 당일 (이카운트 10분 주기)
@@ -25,7 +25,8 @@ import { buildRawOrders } from '@/lib/sales/normalize';
  *              스마트스토어 onlineData /api/smartstore/analysis (당월 1일~오늘)
  * ※ /api/sync-today · /api/refresh-today 는 조회가 아니라 수집 작업을 돌리는 엔드포인트다.
  *   화면에서 직접 부르지 않고 dash 서버의 /api/auto-sync 를 거친다 — 거기서 잠금을 건다.
- * 외부몰(쿠팡·오늘의집 등)은 이카운트 일 단위라 여기 넣지 않는다 — 넣으면 당월 초에 0으로 보인다.
+ * 외부몰(쿠팡·오늘의집 등)은 이카운트 일 단위라 오늘치가 없다. 그래서 다른 타일과 달리
+ * 어제 하루를 보여주고 그 사실을 타일에 적는다 — 빼두면 그만큼이 어디에도 안 잡힌다.
  *
  * 새 백엔드 없이 각 화면이 이미 쓰는 API를 그대로 재사용한다.
  */
@@ -216,6 +217,38 @@ function SmartstoreCheck({ kpis, inflow }) {
   );
 }
 
+/**
+ * 외부몰 — 분류별로 무엇이 팔렸는지.
+ * 몰 목록은 아래 표가 맡고, 여기서는 상품 분류(소파·바디필로우·케어 등)를 본다.
+ */
+function OtherCheck({ d }) {
+  if (!d?.totals) return null;
+  const cats = d.categories || [];
+  const sum = cats.reduce((a, c) => a + Number(c.sales || 0), 0);
+
+  return (
+    <>
+      <div className="kpi-row">
+        <Metric label="매출" value={won(d.totals.sales)} note={`주문 ${fmt(d.totals.orders)}건`} />
+        <Metric label="판매 수량" value={`${fmt(d.totals.qty)}개`} note={`몰 ${fmt(d.totals.groups)}곳`} />
+        <Metric label="객단가" value={won(d.totals.aov)} note="매출 ÷ 주문" />
+      </div>
+      {cats.length > 0 && (
+        <div className="inflow-row">
+          <span className="inflow-label">분류별</span>
+          {cats.map((c) => (
+            <span className="inflow-chip" key={c.category}>
+              {c.category}
+              <b>{won(c.sales)}</b>
+              <i>{c.qty}개{sum ? ` · ${((c.sales / sum) * 100).toFixed(0)}%` : ''}</i>
+            </span>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 const today0 = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
 function ChannelDetail({ channel }) {
@@ -232,6 +265,23 @@ function ChannelDetail({ channel }) {
         mtd: sum?.mtd || null,
       };
     }
+    if (channel === 'other') {
+      // 외부몰은 이카운트 일 단위라 어제 하루를 본다 (타일과 같은 기준)
+      const y = new Date(`${today}T00:00:00+09:00`);
+      y.setDate(y.getDate() - 1);
+      const d = y.toLocaleDateString('sv-SE');
+      const j = await onGet('api/other/overview', { start: d, end: d });
+      return {
+        rows: (j?.groups || []).map((g) => ({
+          name: g.group, qty: g.qty, sales: g.sales, orders: g.orders,
+          subs: (g.subs || []).map((x) => x.store).filter((x) => x && x !== g.group),
+        })),
+        categories: j?.byCategory || [],
+        totals: j?.totals || null,
+        date: d,
+      };
+    }
+
     const j = await onGet('api/smartstore/analysis', { start: today, end: today });
     return {
       rows: (j?.productTop || []).map((r) => ({ name: r.name, qty: r.qty, sales: r.sales, tier: r.tier })),
@@ -250,22 +300,24 @@ function ChannelDetail({ channel }) {
         loading={data.loading}
         error={data.error}
         empty={!data.loading && !data.error && rows.length === 0}
-        emptyText="오늘 판매된 상품이 없습니다."
+        emptyText={channel === 'other' ? '어제 외부몰 판매가 없습니다.' : '오늘 판매된 상품이 없습니다.'}
         onRetry={data.reload}
       />
       {channel === 'cafe24' && <Cafe24Check d={data.data} />}
       {channel === 'smartstore' && <SmartstoreCheck kpis={data.data?.kpis} inflow={data.data?.inflow} />}
+      {channel === 'other' && <OtherCheck d={data.data} />}
       {rows.length > 0 && (
         <>
           <p className="summary">
-            상품 <b>{rows.length}종</b> · 합계 <b>{won(total)}</b>
+            {channel === 'other' ? '몰' : '상품'} <b>{rows.length}{channel === 'other' ? '곳' : '종'}</b>
+            {' · 합계 '}<b>{won(total)}</b>
           </p>
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
                   <th className="col-narrow center">순위</th>
-                  <th>상품</th>
+                  <th>{channel === 'other' ? '몰' : '상품'}</th>
                   {channel === 'smartstore' && <th>등급</th>}
                   <th className="right">수량</th>
                   <th className="right">매출</th>
@@ -380,6 +432,23 @@ export default function HubSummary() {
     return { revenue: k.revenue, orders: k.orders, syncedTo, stale: Boolean(syncedTo && syncedTo < today) };
   }, []);
 
+  /**
+   * 외부몰 — 쿠팡·오늘의집·현대 이지웰 등 자사몰·스마트스토어를 뺀 나머지.
+   * 이카운트 일 단위 적재라 오늘치가 없다. 그래서 어제 하루를 본다.
+   */
+  const other = useAsync(async () => {
+    const y = new Date(`${todayKST()}T00:00:00+09:00`);
+    y.setDate(y.getDate() - 1);
+    const d = y.toLocaleDateString('sv-SE');
+    const j = await onGet('api/other/overview', { start: d, end: d });
+    return {
+      date: d,
+      sales: j?.totals?.sales || 0,
+      orders: j?.totals?.orders || 0,
+      malls: (j?.groups || []).length,
+    };
+  }, []);
+
   const pct = (r) => (typeof r === 'number' ? `${r > 0 ? '+' : ''}${(r * 100).toFixed(0)}%` : null);
 
   const tiles = [
@@ -420,6 +489,18 @@ export default function HubSummary() {
       onSynced: () => smartstore.reload(),
       state: smartstore,
     },
+    {
+      href: 'https://on-iota-three.vercel.app/',
+      external: true,
+      detailKey: 'other',
+      label: '외부몰',
+      value: other.data ? won(other.data.sales) : null,
+      // 다른 타일은 오늘인데 여기만 어제다 — 그 사실을 타일에 적어 오해를 막는다
+      sub: other.data
+        ? `${Number(other.data.date.slice(5, 7))}월 ${Number(other.data.date.slice(8, 10))}일(어제) · ${fmt(other.data.malls)}곳 · 주문 ${fmt(other.data.orders)}건`
+        : null,
+      state: other,
+    },
   ];
 
   return (
@@ -446,7 +527,10 @@ export default function HubSummary() {
         // 한 페이지 모드면 이동 대신 아래로 펼친다
         if (t.detailKey && mode === 'popup') {
           const on = openDetail === t.detailKey;
-          const more = t.detailKey === 'offline' ? '매장별 보기' : '판매 상품 보기';
+          const more =
+            t.detailKey === 'offline' ? '매장별 보기'
+            : t.detailKey === 'other' ? '몰별 보기'
+            : '판매 상품 보기';
           return (
             <div className="hub-wrap" key={t.label}>
               <button type="button" className={`${cls} ${on ? 'hub-open' : ''}`} onClick={() => toggleDetail(t.detailKey)}>
