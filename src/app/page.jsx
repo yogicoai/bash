@@ -29,7 +29,6 @@ export default function HomePage() {
         </div>
       </header>
 
-      <div className="hub-head">실시간 매출</div>
       <HubSummary />
       <TargetProgress />
 

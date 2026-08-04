@@ -441,11 +441,14 @@ export default function HubSummary() {
     y.setDate(y.getDate() - 1);
     const d = y.toLocaleDateString('sv-SE');
     const j = await onGet('api/other/overview', { start: d, end: d });
+    const groups = j?.groups || [];
     return {
       date: d,
       sales: j?.totals?.sales || 0,
       orders: j?.totals?.orders || 0,
-      malls: (j?.groups || []).length,
+      malls: groups.length,
+      // 한 줄을 넓게 쓰므로 어느 몰에서 나온 매출인지 바로 보여준다
+      top: groups.slice(0, 4).map((g) => `${g.group} ${fmt(g.sales)}`),
     };
   }, []);
 
@@ -497,16 +500,17 @@ export default function HubSummary() {
       value: other.data ? won(other.data.sales) : null,
       // 다른 타일은 오늘인데 여기만 어제다 — 그 사실을 타일에 적어 오해를 막는다
       sub: other.data
-        ? `${Number(other.data.date.slice(5, 7))}월 ${Number(other.data.date.slice(8, 10))}일(어제) · ${fmt(other.data.malls)}곳 · 주문 ${fmt(other.data.orders)}건`
+        ? `${other.data.top.join(' · ')}${other.data.malls > 4 ? ` 외 ${other.data.malls - 4}곳` : ''}`
         : null,
       state: other,
     },
   ];
 
-  return (
-    <>
-      <div className="hub">
-      {tiles.map((t) => {
+  /**
+   * 시점이 다른 걸 한 줄에 두면 같은 기준으로 읽힌다.
+   * 실시간(지금까지)과 외부몰(어제)을 줄로 갈라 각각 기준을 적는다.
+   */
+  const renderTile = (t) => {
         const body = (
           <>
             <div className="hub-label">{t.label}</div>
@@ -556,8 +560,26 @@ export default function HubSummary() {
         ) : (
           <div className="hub-wrap" key={t.label}>{inner}</div>
         );
-      })}
+  };
+
+  const live = tiles.filter((t) => t.detailKey !== 'other');
+  const daily = tiles.filter((t) => t.detailKey === 'other');
+
+  return (
+    <>
+      <div className="hub-head">
+        실시간 매출 <span>지금 이 시각까지</span>
       </div>
+      <div className="hub">{live.map(renderTile)}</div>
+
+      {daily.length > 0 && (
+        <>
+          <div className="hub-head hub-head-sub">
+            어제 매출 <span>오늘 오전 10시 반영 · 이카운트 일 단위</span>
+          </div>
+          <div className="hub hub-daily">{daily.map(renderTile)}</div>
+        </>
+      )}
 
       {mode === 'popup' && openDetail && (
         <div className="hub-detail" ref={detailRef}>

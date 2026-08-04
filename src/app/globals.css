@@ -867,3 +867,7 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 }
 .codex-prompt .btn { position: absolute; top: 10px; right: 10px; }
 
+
+/* 실시간과 어제 기준을 줄로 가른다 */
+.hub-head-sub { margin-top: 22px; }
+.hub-daily { grid-template-columns: 1fr; }
