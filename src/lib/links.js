@@ -88,11 +88,11 @@ export const GROUPS = [
     items: [
       {
         name: '물류센터 재고',
-        href: '/stock/center',
+        href: 'https://yogibo.kr/off/stock/index.html',
+        slug: 'center-stock',
         icon: '🏭',
-        status: 'ready',
+        status: 'external',
         desc: '물류센터 창고 재고 · 분류별 + 일자별 스냅샷',
-        source: 'realtime · stock/:category + offorder · snapshot',
       },
       {
         name: '매장 창고재고',
