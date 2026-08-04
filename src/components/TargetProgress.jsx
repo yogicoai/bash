@@ -1,37 +1,61 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { onGet, rtGet } from '@/lib/api';
 import { useAsync } from '@/hooks/useAsync';
 import { isExcludedProduct, isExcludedStore } from '@/lib/sales/config';
 
 /**
- * 이번 달 목표 달성률 — 오프라인 · 자사몰 · 스마트스토어.
+ * 이번 달 목표 달성률 — 오프라인 / 온라인 두 줄.
  *
- * 달성률만 보면 월초엔 항상 낮아 보인다. 그래서 경과일 기준 "있어야 할 수준"을
- * 같이 계산해 페이스(앞섬/뒤처짐)를 함께 보여준다.
- *   오프라인 목표 = jwasu/dashboard 의 매장별 targetMonthlySales 합 (매장 중복 제거)
- *   온라인 목표   = onlineData /api/target (채널별 target·actual, 경과일 포함)
+ * ⚠ 갱신 시점이 위쪽 실시간 매출과 다르다.
+ *   이카운트가 매일 오전 10시에 올라가므로 이 값은 "오늘 오전 10시 기준"이다.
+ *   같은 화면에 실시간 숫자와 나란히 놓이므로 라벨로 반드시 구분한다.
+ *
+ * 실적
+ *   오프라인 = realtime /api/orders 합계 (정산성 항목·요기보매니저영업 제외)
+ *   온라인   = 자사몰 + 스마트스토어(compare/period) + 외부몰(other/overview)
+ *
+ * 목표
+ *   기본값은 API에서 읽고(오프라인은 매장 목표 합, 온라인은 채널 목표 합),
+ *   직접 입력하면 그 값이 우선한다.
+ *   ⚠ dash에는 DB가 없어 입력값은 이 브라우저에만 저장된다(사람마다 다를 수 있음).
+ *     팀이 같은 값을 봐야 하면 각 원천(좌수 관리자·판매분석 사이트)에서 목표를 고치는 게 맞다.
  */
+const KEY = 'dash.monthlyTargets';
 const fmt = (n) => Math.round(n || 0).toLocaleString();
 const eok = (n) => {
   const v = Math.round((n || 0) / 10000);
   return v >= 10000 ? `${(v / 10000).toFixed(1)}억` : `${fmt(v)}만`;
 };
-const monthKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' }).slice(0, 7);
+const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
 export default function TargetProgress() {
-  const month = monthKST();
+  const today = todayKST();
+  const month = today.slice(0, 7);
+  const [custom, setCustom] = useState({});
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ offline: '', online: '' });
+
+  useEffect(() => {
+    try {
+      setCustom(JSON.parse(localStorage.getItem(KEY) || '{}')[month] || {});
+    } catch {
+      /* 저장값이 깨졌으면 무시 */
+    }
+  }, [month]);
 
   const data = useAsync(async () => {
     const lastDay = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
-    const [dash, orders, target] = await Promise.all([
-      rtGet('api/jwasu/dashboard', {
-        searchType: 'month', month, date: `${month}-${lastDay}`,
-        startDate: `${month}-01`, endDate: `${month}-${lastDay}`,
-      }).catch(() => null),
+    const start = `${month}-01`;
+    const end = `${month}-${lastDay}`;
+
+    const [dash, orders, target, period, other] = await Promise.all([
+      rtGet('api/jwasu/dashboard', { searchType: 'month', month, date: end, startDate: start, endDate: end }).catch(() => null),
       rtGet('api/orders', { month, store: 'all' }).catch(() => null),
       onGet('api/target', { month }).catch(() => null),
+      onGet('api/compare/period', { start, end }).catch(() => null),
+      onGet('api/other/overview', { start, end }).catch(() => null),
     ]);
 
     // 오프라인 목표 — 같은 매장이 여러 행으로 오므로 매장당 한 번만 더한다
@@ -47,33 +71,77 @@ export default function TargetProgress() {
       .filter((o) => !isExcludedProduct(o.productName) && !isExcludedStore(o.store))
       .reduce((a, o) => a + Number(o.amount || 0), 0);
 
+    // 온라인 실적 = 자사몰·스마트스토어 + 외부몰
+    const mall = (period?.rows || []).find((r) => r.channel === 'total')?.cur?.revenue || 0;
+    const outside = (other?.groups || []).reduce((a, g) => a + Number(g.sales || 0), 0);
+
     return {
       elapsed: target?.elapsedDays ?? null,
       total: target?.totalDays ?? lastDay,
-      rows: [
-        { label: '오프라인', target: offTarget, actual: offActual },
-        { label: '자사몰', target: target?.cafe24?.target || 0, actual: target?.cafe24?.actual || 0 },
-        { label: '스마트스토어', target: target?.smartstore?.target || 0, actual: target?.smartstore?.actual || 0 },
-      ],
+      offline: { target: offTarget, actual: offActual },
+      online: {
+        target: (target?.cafe24?.target || 0) + (target?.smartstore?.target || 0),
+        actual: mall + outside,
+        outside,
+      },
     };
   }, []);
 
   const view = useMemo(() => {
     if (!data.data) return null;
-    const { rows, elapsed, total } = data.data;
-    // 기간이 이만큼 지났으면 이 정도는 나와 있어야 한다는 기준선
-    const expected = elapsed && total ? (elapsed / total) * 100 : null;
-    return {
-      expected,
-      elapsed,
-      total,
-      rows: rows.map((r) => {
-        const rate = r.target > 0 ? (r.actual / r.target) * 100 : null;
-        const gap = rate != null && expected != null ? rate - expected : null;
-        return { ...r, rate, gap };
-      }),
+    const d = data.data;
+    const expected = d.elapsed && d.total ? (d.elapsed / d.total) * 100 : null;
+    const build = (key, label, base) => {
+      const target = Number(custom[key]) > 0 ? Number(custom[key]) : base.target;
+      const rate = target > 0 ? (base.actual / target) * 100 : null;
+      return {
+        key, label, target, actual: base.actual, rate,
+        gap: rate != null && expected != null ? rate - expected : null,
+        edited: Number(custom[key]) > 0,
+      };
     };
-  }, [data.data]);
+    return {
+      expected, elapsed: d.elapsed, total: d.total, outside: d.online.outside,
+      rows: [build('offline', '오프라인', d.offline), build('online', '온라인', d.online)],
+    };
+  }, [data.data, custom]);
+
+  function openEditor() {
+    setDraft({
+      offline: String(custom.offline || view?.rows[0].target || ''),
+      online: String(custom.online || view?.rows[1].target || ''),
+    });
+    setEditing(true);
+  }
+
+  function save() {
+    const next = {};
+    for (const k of ['offline', 'online']) {
+      const v = Number(String(draft[k]).replace(/[^0-9]/g, ''));
+      if (v > 0) next[k] = v;
+    }
+    setCustom(next);
+    try {
+      const all = JSON.parse(localStorage.getItem(KEY) || '{}');
+      all[month] = next;
+      localStorage.setItem(KEY, JSON.stringify(all));
+    } catch {
+      /* 저장 실패해도 이번 세션에는 반영된다 */
+    }
+    setEditing(false);
+  }
+
+  function reset() {
+    setCustom({});
+    try {
+      const all = JSON.parse(localStorage.getItem(KEY) || '{}');
+      delete all[month];
+      localStorage.setItem(KEY, JSON.stringify(all));
+    } catch {
+      /* 무시 */
+    }
+    setEditing(false);
+  }
 
   if (data.loading) return <div className="target-strip target-loading">이번 달 목표 불러오는 중…</div>;
   if (data.error || !view) return null;
@@ -82,17 +150,44 @@ export default function TargetProgress() {
     <section className="target-strip">
       <div className="target-head">
         <strong>{month.slice(5)}월 목표 달성률</strong>
+        <span className="target-basis">오늘 오전 10시 기준</span>
         {view.elapsed != null && (
-          <span>
-            {view.elapsed}/{view.total}일 경과 · 기준 {view.expected.toFixed(0)}%
-          </span>
+          <span>{view.elapsed}/{view.total}일 경과 · 기준선 {view.expected.toFixed(0)}%</span>
         )}
+        <button type="button" className="btn btn-sm" onClick={editing ? () => setEditing(false) : openEditor}>
+          {editing ? '닫기' : '목표 입력'}
+        </button>
       </div>
+
+      {editing && (
+        <div className="target-edit">
+          {['offline', 'online'].map((k) => (
+            <label key={k}>
+              <span>{k === 'offline' ? '오프라인' : '온라인'} 목표</span>
+              <input
+                className="input"
+                inputMode="numeric"
+                value={draft[k]}
+                onChange={(e) => setDraft((d) => ({ ...d, [k]: e.target.value }))}
+                placeholder="원 단위"
+              />
+            </label>
+          ))}
+          <button type="button" className="btn btn-download" onClick={save}>저장</button>
+          <button type="button" className="btn" onClick={reset}>기본값</button>
+          <p className="target-note">
+            이 브라우저에만 저장됩니다 — 팀이 같은 값을 보려면 좌수 관리자·판매분석 사이트에서 목표를 고쳐주세요.
+          </p>
+        </div>
+      )}
 
       <div className="target-rows">
         {view.rows.map((r) => (
-          <div className="target-row" key={r.label}>
-            <div className="target-label">{r.label}</div>
+          <div className="target-row" key={r.key}>
+            <div className="target-label">
+              {r.label}
+              {r.edited && <em title="직접 입력한 목표">*</em>}
+            </div>
             <div className="target-bar">
               {view.expected != null && <i className="target-mark" style={{ left: `${Math.min(view.expected, 100)}%` }} />}
               <i className="target-fill" style={{ width: `${Math.min(r.rate || 0, 100)}%` }} />
@@ -105,12 +200,12 @@ export default function TargetProgress() {
                 </span>
               )}
             </div>
-            <div className="target-amt">
-              {eok(r.actual)} / {eok(r.target)}
-            </div>
+            <div className="target-amt">{eok(r.actual)} / {eok(r.target)}</div>
           </div>
         ))}
       </div>
+
+      <p className="target-foot">온라인은 자사몰·스마트스토어 + 외부몰({eok(view.outside)}) 합계입니다.</p>
     </section>
   );
 }

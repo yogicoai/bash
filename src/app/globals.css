@@ -779,3 +779,18 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .target-gap.up { color: var(--good); }
 .target-gap.down { color: var(--bad); }
 .target-amt { text-align: right; font-size: 11.5px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.target-basis {
+  font-size: 10.5px; font-weight: 600; color: var(--warn);
+  background: rgba(245,158,11,.12); border-radius: 999px; padding: 2px 8px;
+}
+.target-edit {
+  display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 9px;
+  padding: 12px 14px; margin-bottom: 14px;
+}
+.target-edit label { display: flex; flex-direction: column; gap: 5px; }
+.target-edit label span { font-size: 11.5px; color: var(--muted); }
+.target-edit .input { min-width: 170px; }
+.target-note { flex-basis: 100%; margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+.target-label em { color: var(--accent); font-style: normal; font-weight: 700; margin-left: 3px; }
+.target-foot { margin: 12px 0 0; font-size: 11px; color: var(--muted); }
