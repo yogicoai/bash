@@ -129,7 +129,9 @@ export const GROUPS = [
       {
         name: '매장매니저 스케줄 관리',
         href: 'https://yogibo.kr/off/staff/schedule.html',
-        slug: 'staff-schedule',
+        // Cafe24가 이 경로에만 Cloudflare 봇 검증(302)을 걸어 둬서
+        // iframe 안에서는 통과할 수 없다 → 새 창으로 연다
+        newTab: true,
         icon: '📅',
         status: 'external',
         desc: '매장 매니저 근무·시차 캘린더',
