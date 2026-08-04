@@ -1,36 +1,19 @@
 import { MCP_URL } from '@/lib/zones';
 
 /**
- * MCP 설정 파일 발급 — 비밀번호를 확인한 뒤 서버가 만들어 준다.
+ * MCP 설정 파일 발급 — dash 로그인을 통과한 사람에게 서버가 만들어 준다.
  *
- * 토큰(MCP_TOKEN)은 절대 클라이언트 번들에 넣지 않는다.
- * 비밀번호가 맞을 때만 이 라우트가 토큰이 든 JSON을 돌려준다.
+ * 토큰(MCP_TOKEN)은 클라이언트 번들에 넣지 않는다. 이 라우트가 서버에서
+ * 읽어 파일에만 담는다.
+ *
+ * 예전에는 여기서 비밀번호를 한 번 더 받았다. 그런데 이 경로는 이미 dash
+ * 로그인 뒤에 있어(proxy 가 /api/* 를 막는다) 같은 사람에게 두 번 묻는
+ * 꼴이었다. 문턱만 늘고 지키는 것은 없어서 걷어냈다.
  */
-function safeEqual(a, b) {
-  const x = String(a ?? '');
-  const y = String(b ?? '');
-  let diff = x.length ^ y.length;
-  const n = Math.max(x.length, y.length, 1);
-  for (let i = 0; i < n; i++) diff |= x.charCodeAt(i % (x.length || 1)) ^ y.charCodeAt(i % (y.length || 1));
-  return diff === 0;
-}
-
-export async function POST(req) {
-  const pw = process.env.MCP_CONFIG_PASSWORD;
+export async function GET() {
   const token = process.env.MCP_TOKEN;
-  if (!pw || !token) {
-    return Response.json({ success: false, error: 'MCP_CONFIG_PASSWORD / MCP_TOKEN 미설정' }, { status: 500 });
-  }
-
-  let password = '';
-  try {
-    ({ password = '' } = await req.json());
-  } catch {
-    return Response.json({ success: false, error: '잘못된 요청' }, { status: 400 });
-  }
-
-  if (!safeEqual(password, pw)) {
-    return Response.json({ success: false, error: '비밀번호가 맞지 않습니다.' }, { status: 401 });
+  if (!token) {
+    return Response.json({ success: false, error: 'MCP_TOKEN 미설정' }, { status: 500 });
   }
 
   const config = {

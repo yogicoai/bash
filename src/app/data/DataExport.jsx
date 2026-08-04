@@ -17,25 +17,19 @@ function McpHealth() {
 }
 
 /**
- * 설정 파일 받기 — 접속 토큰이 들어 있어 비밀번호를 확인한 뒤 서버가 만들어 준다.
- * 토큰은 클라이언트 번들에 들어가지 않는다.
+ * 설정 파일 받기 — dash 로그인을 통과했으면 바로 내려받는다.
+ * 토큰은 서버에서만 읽어 파일에 담으므로 클라이언트 번들에 남지 않는다.
  */
 function ConfigDownload() {
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
-  async function submit(e) {
-    e.preventDefault();
+  async function download() {
     setBusy(true);
     setError('');
     try {
-      const res = await fetch('/api/mcp-config', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
+      const res = await fetch('/api/mcp-config', { cache: 'no-store' });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         setError(j.error || '받을 수 없습니다.');
@@ -49,7 +43,6 @@ function ConfigDownload() {
       a.click();
       URL.revokeObjectURL(url);
       setDone(true);
-      setPassword('');
     } catch {
       setError('서버에 연결할 수 없습니다.');
     } finally {
@@ -58,23 +51,15 @@ function ConfigDownload() {
   }
 
   return (
-    <form onSubmit={submit}>
+    <>
       <div className="toolbar">
-        <input
-          type="password"
-          className="input"
-          placeholder="설정파일 비밀번호"
-          value={password}
-          onChange={(e) => { setPassword(e.target.value); setDone(false); }}
-          autoComplete="off"
-        />
-        <button type="submit" className="btn btn-download" disabled={busy || !password}>
-          {busy ? '확인 중…' : '↓ 설정파일 받기'}
+        <button type="button" className="btn btn-download" onClick={download} disabled={busy}>
+          {busy ? '만드는 중…' : '↓ 설정파일 받기'}
         </button>
       </div>
       {error && <div className="warn-banner">{error}</div>}
       {done && <div className="snap-count">받았습니다 — claude_desktop_config.json</div>}
-    </form>
+    </>
   );
 }
 
