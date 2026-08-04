@@ -17,7 +17,8 @@ export default function HomePage() {
           <div className="page-brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="YOGI CORPORATION" className="page-logo" />
-            <h1>통합 대시보드</h1>
+            {/* 로고가 이름을 대신하므로 화면에는 감춘다 — 읽기 프로그램·탭 제목용으로만 남긴다 */}
+            <h1 className="sr-only">통합 대시보드</h1>
           </div>
           <p>오프라인·영업·온라인·마케팅·B2B·CS 데이터를 한곳에서</p>
         </div>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import TodaySales from '@/app/sales/today/TodaySales';
 import DataState from './DataState';
 import { onGet } from '@/lib/api';
+import { canSync, markSync, waitMinutes } from '@/lib/syncGate';
 import { useAsync } from '@/hooks/useAsync';
 import { useViewMode } from './ViewMode';
 import { rtGet } from '@/lib/api';
@@ -22,7 +23,8 @@ import { buildRawOrders } from '@/lib/sales/normalize';
  *   오프라인 : 매장 전체 (이카운트 10분 주기)   realtime /api/orders
  *   온라인   : Cafe24  onlineData /api/cafe24/daily-summary (당월 누적)
  *              스마트스토어 onlineData /api/smartstore/analysis (당월 1일~오늘)
- * ※ /api/sync-today · /api/refresh-today 는 동기화 작업을 실행시키는 엔드포인트라 여기서 부르지 않는다.
+ * ※ /api/sync-today · /api/refresh-today 는 조회가 아니라 수집 작업을 돌리는 엔드포인트다.
+ *   화면에서 직접 부르지 않고 dash 서버의 /api/auto-sync 를 거친다 — 거기서 잠금을 건다.
  * 외부몰(쿠팡·오늘의집 등)은 이카운트 일 단위라 여기 넣지 않는다 — 넣으면 당월 초에 0으로 보인다.
  *
  * 새 백엔드 없이 각 화면이 이미 쓰는 API를 그대로 재사용한다.
@@ -32,18 +34,30 @@ const won = (n) => `${fmt(n)}원`;
 const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
 /**
- * 동기화 실행 버튼 — onlineData 의 수집 작업을 사람이 눌러 돌린다.
- * 이 엔드포인트들은 조회가 아니라 작업을 시작시키므로 자동 호출하지 않고 버튼으로만 노출한다.
+ * 동기화 버튼 — 페이지를 열 때 자동으로 한 번 돌기 때문에 평소엔 누를 일이 없다.
+ * 방금 돌았으면 남은 시간을 보여주며 잠근다(연타 방지). 수집 작업이라 자주 돌릴수록
+ * 원천 API 에 부담이 간다.
  */
-function SyncButton({ path, onDone }) {
+function SyncButton({ syncKey, onDone }) {
   const [state, setState] = useState('idle');
+  const [wait, setWait] = useState(0);
+
+  useEffect(() => {
+    const tick = () => setWait(waitMinutes(syncKey));
+    tick();
+    const t = setInterval(tick, 30_000);
+    return () => clearInterval(t);
+  }, [syncKey]);
 
   async function run(e) {
     e.preventDefault();
     e.stopPropagation();
+    if (wait > 0) return;
     setState('running');
+    markSync(syncKey);
+    setWait(waitMinutes(syncKey));
     try {
-      await onGet(path);
+      await fetch('/api/auto-sync', { cache: 'no-store' });
       // 작업이 백그라운드로 도는 동안 잠시 기다렸다가 값을 다시 읽는다
       setTimeout(() => { setState('idle'); onDone?.(); }, 6000);
     } catch {
@@ -52,9 +66,21 @@ function SyncButton({ path, onDone }) {
     }
   }
 
+  const label =
+    state === 'running' ? '동기화 중…'
+    : state === 'error' ? '실패'
+    : wait > 0 ? `${wait}분 뒤 가능`
+    : '↻ 동기화';
+
   return (
-    <button type="button" className="hub-sync" onClick={run} disabled={state === 'running'} title="지금 동기화">
-      {state === 'running' ? '동기화 중…' : state === 'error' ? '실패' : '↻ 동기화'}
+    <button
+      type="button"
+      className="hub-sync"
+      onClick={run}
+      disabled={state === 'running' || wait > 0}
+      title={wait > 0 ? '방금 동기화했습니다' : '지금 동기화'}
+    >
+      {label}
     </button>
   );
 }
@@ -133,6 +159,37 @@ export default function HubSummary() {
     if (next) setTimeout(() => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
   };
 
+  /**
+   * 페이지를 열 때 수집을 한 번 돌린다.
+   *
+   * 예전에는 사람이 "↻ 동기화"를 눌러야만 금액이 최신이 됐다. 이제 들어오면 알아서
+   * 돌되, 새로고침할 때마다 다시 돌지 않게 쿠키로 10분 잠금을 건다. 서버(/api/auto-sync)
+   * 에도 같은 잠금이 있어 여러 사람이 동시에 들어와도 한 번만 돈다.
+   *
+   * 수집은 응답 뒤에 시작되므로(서버 after) 넉넉히 기다렸다가 값을 다시 읽는다.
+   */
+  useEffect(() => {
+    if (!canSync('auto')) return;
+    markSync('auto');
+    let alive = true;
+    fetch('/api/auto-sync', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((j) => {
+        for (const k of j?.synced || []) markSync(k);
+        if (!alive || !j?.synced?.length) return;
+        setTimeout(() => {
+          if (!alive) return;
+          if (j.synced.includes('cafe24')) cafe24.reload();
+          if (j.synced.includes('smartstore')) smartstore.reload();
+        }, 20_000);
+      })
+      .catch(() => {
+        /* 수집이 실패해도 화면은 마지막으로 모인 값을 그대로 보여준다 */
+      });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const offline = useAsync(async () => {
     const m = await rtGet('api/months');
     const month = [...(m?.months || [])].sort().pop();
@@ -198,7 +255,7 @@ export default function HubSummary() {
       sub: cafe24.data
         ? `지난주 같은 요일 ${won(cafe24.data.prev)}${pct(cafe24.data.rate) ? ` · ${pct(cafe24.data.rate)}` : ''}`
         : null,
-      syncPath: 'api/refresh-today',
+      syncKey: 'cafe24',
       onSynced: () => cafe24.reload(),
       state: cafe24,
     },
@@ -214,7 +271,7 @@ export default function HubSummary() {
           : `주문 ${fmt(smartstore.data.orders)}건`
         : null,
       tone: smartstore.data?.stale ? 'stale' : null,
-      syncPath: 'api/smartstore/sync-week',
+      syncKey: 'smartstore',
       onSynced: () => smartstore.reload(),
       state: smartstore,
     },
@@ -251,7 +308,7 @@ export default function HubSummary() {
                 {body}
                 <span className="hub-more">{on ? '접기 ▲' : `${more} ▼`}</span>
               </button>
-              {t.syncPath && <SyncButton path={t.syncPath} onDone={t.onSynced} />}
+              {t.syncKey && <SyncButton syncKey={t.syncKey} onDone={t.onSynced} />}
             </div>
           );
         }
@@ -262,10 +319,10 @@ export default function HubSummary() {
           <Link className={cls} href={t.href}>{body}</Link>
         );
 
-        return t.syncPath ? (
+        return t.syncKey ? (
           <div className="hub-wrap" key={t.label}>
             {inner}
-            <SyncButton path={t.syncPath} onDone={t.onSynced} />
+            <SyncButton syncKey={t.syncKey} onDone={t.onSynced} />
           </div>
         ) : (
           <div className="hub-wrap" key={t.label}>{inner}</div>

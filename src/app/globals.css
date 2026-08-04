@@ -760,7 +760,6 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .page-logo { width: 200px; height: auto; display: block; }
 /* 로고 옆에 나란히 — 로고 아래 빈칸이 크게 남던 자리를 제목이 채운다 */
 .page-brand { display: flex; align-items: center; gap: 16px; }
-.page-brand h1 { padding-left: 16px; border-left: 1px solid var(--line); line-height: 1.2; }
 :root[data-theme='dark'] .page-logo { filter: brightness(0) invert(1); }
 .page-head h1 { font-size: 20px; }
 .embed-pw {
@@ -815,3 +814,9 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 /* 팝업 안에서 끝까지 동작하지 않는 화면 안내 */
 .embed-hint-warn { color: var(--warn, #f59e0b); }
 .embed-hint-warn a { color: inherit; font-weight: 700; text-decoration: underline; }
+
+/* 화면에서는 감추되 읽기 프로그램에는 남긴다 */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
