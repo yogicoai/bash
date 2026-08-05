@@ -263,7 +263,15 @@ function AdsStrip() {
         <div className="ads-total">
           <span className="kpi-label">광고비</span>
           <b>{won(d.spend)}</b>
-          <span className="kpi-note">전환 {fmt(d.conversions)}건</span>
+        </div>
+        {/* 노출·클릭은 매체가 자기 지면에서 직접 잰 값이라 중복이 없다 — 그래서 믿고 쓴다 */}
+        <div className="ads-kpis">
+          <span><i>노출</i>{fmt(d.imp)}</span>
+          <span><i>클릭</i>{fmt(d.clk)}</span>
+          <span title="클릭률 — 소재가 먹히는지"><i>CTR</i>{d.imp ? `${((d.clk / d.imp) * 100).toFixed(2)}%` : '—'}</span>
+          <span title="클릭 단가 — 오르면 경쟁이 세졌다는 뜻"><i>CPC</i>{d.clk ? won(Math.round(d.spend / d.clk)) : '—'}</span>
+          <span><i>장바구니</i>{fmt(d.cart)}</span>
+          <span title="매체마다 같은 주문을 서로 자기 실적으로 잡아 실제보다 부풀려진다"><i>전환</i>{fmt(d.conversions)}</span>
         </div>
         <div className="inflow-row" style={{ margin: 0 }}>
           {d.rows.map((r) => (

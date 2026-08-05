@@ -9,6 +9,11 @@ import { ZONES } from '@/lib/zones';
  *   실적으로 잡아 실제 매출보다 훨씬 크게 나온다(8/3 기준 전환매출 합계
  *   2,022만원 vs 그날 자사몰 매출 685만원). 믿을 수 있는 건 실제로 나간
  *   광고비와 잔액이다.
+ *
+ * 노출(imp)·클릭(clk)은 각 매체가 자기 지면에서 직접 잰 값이라 중복이 없다.
+ * 그래서 CTR(클릭률)·CPC(클릭 단가)는 그대로 믿을 수 있다 — 소재가 먹히는지,
+ * 단가가 뛰었는지를 하루 안에 알 수 있는 지표다.
+ * CPA(전환 단가)는 전환수가 매체별로 겹쳐 실제보다 싸게 보이므로 넣지 않는다.
  */
 const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
@@ -32,6 +37,9 @@ export async function GET(req) {
     platform: r.platform,
     spend: Number(r.spend || 0),
     conversions: Number(r.conversions || 0),
+    imp: Number(r.imp || 0),
+    clk: Number(r.clk || 0),
+    cart: Number(r.cartCnt || 0),
     balance: Number(r.balance || 0),
   }));
 
@@ -41,6 +49,9 @@ export async function GET(req) {
       date: json?.date || date,
       spend: rows.reduce((a, r) => a + r.spend, 0),
       conversions: rows.reduce((a, r) => a + r.conversions, 0),
+      imp: rows.reduce((a, r) => a + r.imp, 0),
+      clk: rows.reduce((a, r) => a + r.clk, 0),
+      cart: rows.reduce((a, r) => a + r.cart, 0),
       // 돌고 있는데 잔액이 없는 매체 — 광고가 멈출 수 있어 바로 알아야 한다
       empty: rows.filter((r) => r.spend > 0 && r.balance === 0).map((r) => r.platform),
       rows: rows.filter((r) => r.spend > 0).sort((a, b) => b.spend - a.spend),

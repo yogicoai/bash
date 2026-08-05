@@ -909,3 +909,7 @@ button.target-card:hover { border-color: var(--accent, #3b82f6); }
 .ads-total b { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
 .inflow-chip.chip-warn { border-color: var(--down, #dc2626); }
 .inflow-chip.chip-warn i { color: var(--down, #dc2626); font-weight: 700; }
+
+/* 광고 지표 — 노출·클릭·CTR·CPC */
+.ads-kpis { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; font-weight: 700; }
+.ads-kpis i { font-style: normal; font-size: 11px; font-weight: 500; color: var(--muted); margin-right: 5px; }
