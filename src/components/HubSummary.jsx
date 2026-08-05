@@ -225,16 +225,19 @@ function SmartstoreCheck({ kpis, inflow }) {
 /**
  * 오늘 광고 — 매출 아래에 붙인다.
  *
- * 광고비와 잔액만 쓴다. 플랫폼이 주는 "전환매출"은 매체끼리 같은 주문을 서로
- * 자기 실적으로 잡아 실제 매출보다 훨씬 크게 나오므로 여기 두면 판단을 망친다.
- * 대신 잔액이 바닥난 매체는 눈에 띄게 알린다 — 광고가 멈추면 매출이 바로 빠진다.
+ * 보는 사람이 궁금한 건 "지금 돈이 제대로 일하고 있나"다. 잔액이 얼마 남았는지는
+ * 광고 담당이 따로 챙기는 일이라 여기 두지 않는다.
+ *
+ * 효율은 광고비를 오늘 온라인 매출과 견줘 본다. 플랫폼이 주는 "전환매출"로 ROAS 를
+ * 내면 매체끼리 같은 주문을 서로 자기 실적으로 잡아 7,000% 같은 숫자가 나온다.
+ * 광고비도 매출도 실제로 오간 돈이라, 그 둘의 비율만 믿을 수 있다.
  *
  * 10분마다 다시 읽는다. 단 탭이 보일 때만 — 열어두고 방치한 창이 계속 부르지
  * 않게. 다른 탭에 있다가 돌아오면 즉시 한 번 읽어 낡은 숫자를 보지 않게 한다.
  */
 const ADS_REFRESH_MS = 10 * 60_000;
 
-function AdsStrip() {
+function AdsStrip({ onlineToday }) {
   const [tick, setTick] = useState(0);
   const ads = useAsync(() => fetch('/api/ads', { cache: 'no-store' }).then((r) => r.json()), [tick]);
 
@@ -257,36 +260,49 @@ function AdsStrip() {
   return (
     <>
       <div className="hub-head hub-head-sub">
-        오늘 광고 <span>지금까지 집행된 광고비 · 10분마다 갱신</span>
+        실시간 광고 <span>지금까지 집행 · 10분마다 갱신</span>
       </div>
-      <div className="ads-strip">
-        <div className="ads-total">
-          <span className="kpi-label">광고비</span>
-          <b>{won(d.spend)}</b>
-        </div>
-        {/* 노출·클릭은 매체가 자기 지면에서 직접 잰 값이라 중복이 없다 — 그래서 믿고 쓴다 */}
-        <div className="ads-kpis">
-          <span><i>노출</i>{fmt(d.imp)}</span>
-          <span><i>클릭</i>{fmt(d.clk)}</span>
-          <span title="클릭률 — 소재가 먹히는지"><i>CTR</i>{d.imp ? `${((d.clk / d.imp) * 100).toFixed(2)}%` : '—'}</span>
-          <span title="클릭 단가 — 오르면 경쟁이 세졌다는 뜻"><i>CPC</i>{d.clk ? won(Math.round(d.spend / d.clk)) : '—'}</span>
-          <span><i>장바구니</i>{fmt(d.cart)}</span>
-          <span title="매체마다 같은 주문을 서로 자기 실적으로 잡아 실제보다 부풀려진다"><i>전환</i>{fmt(d.conversions)}</span>
-        </div>
-        <div className="inflow-row" style={{ margin: 0 }}>
-          {d.rows.map((r) => (
-            <span className={`inflow-chip ${r.balance === 0 ? 'chip-warn' : ''}`} key={r.platform}>
-              {r.platform}<b>{won(r.spend)}</b>
-              {r.balance === 0 && <i>잔액 0</i>}
-            </span>
-          ))}
-        </div>
+
+      {/* 위 매출 타일과 같은 카드 언어로 — 숫자를 한 줄에 늘어놓으면 눈이 머물 데가 없다.
+          노출·클릭은 매체가 자기 지면에서 직접 잰 값이라 중복이 없어 믿고 쓴다. */}
+      <div className="kpi-row">
+        <Metric
+          label="광고비 비중"
+          value={onlineToday ? `${((d.spend / onlineToday) * 100).toFixed(1)}%` : '—'}
+          note={`${won(d.spend)} / 온라인 매출 ${won(onlineToday)}`}
+          hint="오늘 온라인 매출에서 광고비가 차지하는 몫 — 낮을수록 효율이 좋다"
+          tone={onlineToday && d.spend / onlineToday <= 0.15 ? 'good' : onlineToday ? 'warn' : null}
+        />
+        <Metric
+          label="클릭"
+          value={fmt(d.clk)}
+          note={`CTR ${d.imp ? ((d.clk / d.imp) * 100).toFixed(2) : '—'}%`}
+          hint="클릭률 — 소재가 먹히는지"
+        />
+        <Metric
+          label="클릭 단가"
+          value={d.clk ? won(Math.round(d.spend / d.clk)) : '—'}
+          note="CPC"
+          hint="오르면 경쟁이 세졌다는 뜻"
+        />
+        <Metric
+          label="장바구니"
+          value={`${fmt(d.cart)}건`}
+          note={`전환 ${fmt(d.conversions)}건`}
+          hint="장바구니는 구매 직전 신호라 매출보다 먼저 움직인다. 전환 건수는 매체끼리 겹쳐 부풀려진다."
+          tone={d.cart > 0 ? 'good' : null}
+        />
       </div>
-      {d.empty?.length > 0 && (
-        <div className="warn-banner">
-          ⚠ {d.empty.join(' · ')} 잔액이 0원입니다 — 광고가 멈출 수 있습니다.
-        </div>
-      )}
+
+      <div className="inflow-row">
+        <span className="inflow-label">매체별</span>
+        {d.rows.map((r) => (
+          <span className="inflow-chip" key={r.platform}>
+            {r.platform}<b>{won(r.spend)}</b>
+            {r.clk > 0 && <i>클릭 {fmt(r.clk)}</i>}
+          </span>
+        ))}
+      </div>
     </>
   );
 }
@@ -568,7 +584,7 @@ export default function HubSummary() {
         실시간 매출 <span>지금 이 시각까지</span>
       </div>
       <div className="hub">{tiles.map(renderTile)}</div>
-      <AdsStrip />
+      <AdsStrip onlineToday={(cafe24.data?.revenue || 0) + (smartstore.data?.stale ? 0 : smartstore.data?.revenue || 0)} />
 
 
       {mode === 'popup' && openDetail && (
