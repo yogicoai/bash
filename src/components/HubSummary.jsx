@@ -228,16 +228,36 @@ function SmartstoreCheck({ kpis, inflow }) {
  * 광고비와 잔액만 쓴다. 플랫폼이 주는 "전환매출"은 매체끼리 같은 주문을 서로
  * 자기 실적으로 잡아 실제 매출보다 훨씬 크게 나오므로 여기 두면 판단을 망친다.
  * 대신 잔액이 바닥난 매체는 눈에 띄게 알린다 — 광고가 멈추면 매출이 바로 빠진다.
+ *
+ * 10분마다 다시 읽는다. 단 탭이 보일 때만 — 열어두고 방치한 창이 계속 부르지
+ * 않게. 다른 탭에 있다가 돌아오면 즉시 한 번 읽어 낡은 숫자를 보지 않게 한다.
  */
+const ADS_REFRESH_MS = 10 * 60_000;
+
 function AdsStrip() {
-  const ads = useAsync(() => fetch('/api/ads', { cache: 'no-store' }).then((r) => r.json()), []);
+  const [tick, setTick] = useState(0);
+  const ads = useAsync(() => fetch('/api/ads', { cache: 'no-store' }).then((r) => r.json()), [tick]);
+
+  useEffect(() => {
+    const bump = () => setTick((t) => t + 1);
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') bump();
+    }, ADS_REFRESH_MS);
+    const onVisible = () => document.visibilityState === 'visible' && bump();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
   const d = ads.data;
   if (ads.loading || ads.error || !d?.success || !d.rows?.length) return null;
 
   return (
     <>
       <div className="hub-head hub-head-sub">
-        오늘 광고 <span>지금까지 집행된 광고비</span>
+        오늘 광고 <span>지금까지 집행된 광고비 · 10분마다 갱신</span>
       </div>
       <div className="ads-strip">
         <div className="ads-total">
