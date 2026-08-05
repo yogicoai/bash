@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { onGet, rtGet } from '@/lib/api';
 import { useAsync } from '@/hooks/useAsync';
 
@@ -99,9 +99,21 @@ export default function TargetProgress() {
     for (const o of orders?.orders || []) {
       const d = String(o.date || '').slice(0, 10);
       if (!d || d > end) continue;
-      byDate.set(d, (byDate.get(d) || 0) + Number(o.amount || 0));
+      const day = byDate.get(d) || { sales: 0, stores: new Map() };
+      const amt = Number(o.amount || 0);
+      day.sales += amt;
+      const st = o.store || '미지정';
+      day.stores.set(st, (day.stores.get(st) || 0) + amt);
+      byDate.set(d, day);
     }
-    const offDaily = [...byDate.entries()].map(([date, sales]) => ({ date, sales })).sort((a, b) => a.date.localeCompare(b.date));
+    const offDaily = [...byDate.entries()]
+      .map(([date, v]) => ({
+        date,
+        sales: v.sales,
+        // 날짜를 누르면 그날 어느 매장이 팔았는지 — 합계만으로는 좋은 날의 이유를 모른다
+        stores: [...v.stores.entries()].map(([name, sales]) => ({ name, sales })).sort((a, b) => b.sales - a.sales),
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     const onChannels = [
       ...(period?.rows || [])
@@ -290,6 +302,7 @@ export default function TargetProgress() {
 
 /** 오프라인 일자별 — 원장이 있어 날짜로 쪼갤 수 있다 */
 function DailyList({ rows }) {
+  const [open, setOpen] = useState(null);
   if (!rows?.length) return <p className="summary">아직 이번 달 매출이 없습니다.</p>;
   const max = Math.max(1, ...rows.map((r) => r.sales));
   const total = rows.reduce((a, r) => a + r.sales, 0);
@@ -304,16 +317,46 @@ function DailyList({ rows }) {
             <tr><th>날짜</th><th className="right">매출</th><th style={{ width: 220 }} /></tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.date}>
-                <td className="strong">
-                  {Number(r.date.slice(5, 7))}월 {Number(r.date.slice(8, 10))}일
-                  <span className="dim"> ({dow[new Date(`${r.date}T00:00:00+09:00`).getDay()]})</span>
-                </td>
-                <td className="right mono strong">{fmt(r.sales)}원</td>
-                <td><div className="minibar"><div style={{ width: `${(r.sales / max) * 100}%` }} /></div></td>
-              </tr>
-            ))}
+            {rows.map((r) => {
+              const on = open === r.date;
+              return (
+                <Fragment key={r.date}>
+                  <tr
+                    className={`row-click ${on ? 'row-open' : ''}`}
+                    onClick={() => setOpen(on ? null : r.date)}
+                    title={on ? '접기' : '매장별 보기'}
+                  >
+                    <td className="strong">
+                      <span className="row-caret">{on ? '▾' : '▸'}</span>{' '}
+                      {Number(r.date.slice(5, 7))}월 {Number(r.date.slice(8, 10))}일
+                      <span className="dim"> ({dow[new Date(`${r.date}T00:00:00+09:00`).getDay()]})</span>
+                    </td>
+                    <td className="right mono strong">{fmt(r.sales)}원</td>
+                    <td><div className="minibar"><div style={{ width: `${(r.sales / max) * 100}%` }} /></div></td>
+                  </tr>
+                  {on && (
+                    <tr className="sub-row">
+                      <td colSpan={3}>
+                        <table className="table table-sub">
+                          <thead>
+                            <tr><th>매장</th><th className="right">매출</th><th className="right">비중</th></tr>
+                          </thead>
+                          <tbody>
+                            {r.stores.map((st) => (
+                              <tr key={st.name}>
+                                <td className="strong">{st.name}</td>
+                                <td className="right mono">{fmt(st.sales)}원</td>
+                                <td className="right mono dim">{((st.sales / r.sales) * 100).toFixed(0)}%</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
