@@ -486,6 +486,20 @@ export default function HubSummary() {
     return { revenue: k.revenue, orders: k.orders, syncedTo, stale: Boolean(syncedTo && syncedTo < today) };
   }, []);
 
+  /**
+   * 언제 읽은 숫자인가.
+   *
+   * 탭을 열어두면 화면은 그대로인데 숫자는 낡는다. 자동 갱신이 15분마다 돌지만
+   * 그게 돌았는지 사람이 알 방법이 없었다. 세 채널이 다 들어온 시각을 남긴다.
+   *
+   * 실시간 줄에만 붙인다 — 목표 달성률은 어제까지 기준이라 여기 시각을 붙이면
+   * 거짓말이 된다.
+   */
+  const [fetchedAt, setFetchedAt] = useState(null);
+  useEffect(() => {
+    if (offline.data || cafe24.data || smartstore.data) setFetchedAt(new Date());
+  }, [offline.data, cafe24.data, smartstore.data]);
+
   const pct = (r) => (typeof r === 'number' ? `${r > 0 ? '+' : ''}${(r * 100).toFixed(0)}%` : null);
 
   const tiles = [
@@ -587,6 +601,11 @@ export default function HubSummary() {
     <>
       <div className="hub-head">
         실시간 매출 <span>지금 이 시각까지</span>
+        {fetchedAt && (
+          <span className="hub-head-time" title="이 시각에 읽은 숫자입니다 · 15분마다 자동 갱신">
+            {fetchedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })} 기준
+          </span>
+        )}
       </div>
       <div className="hub">{tiles.map(renderTile)}</div>
       <AdsStrip onlineToday={(cafe24.data?.revenue || 0) + (smartstore.data?.stale ? 0 : smartstore.data?.revenue || 0)} />
