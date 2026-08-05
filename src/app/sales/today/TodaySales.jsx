@@ -36,33 +36,12 @@ export default function TodaySales() {
     const month = today.slice(0, 7);
     const lastDay = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
 
-    const [json, jwasu] = await Promise.all([
+    const [json, seatRes] = await Promise.all([
       rtGet('api/orders', { month, store: 'all' }),
-      rtGet('api/jwasu/dashboard', {
-        searchType: 'month', month,
-        date: `${month}-${lastDay}`, startDate: `${month}-01`, endDate: `${month}-${lastDay}`,
-      }).catch(() => null),
+      // 좌수 원장은 1.7MB 라 dash 서버가 날짜·매장·사람으로 접어 내려준다
+      fetch(`/api/seats?month=${month}`, { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
     ]);
-
-    // 좌수 — 한 매장에 여러 사람이 있으므로 매장 단위로 합친다
-    const seats = new Map();
-    for (const r of jwasu?.data || []) {
-      const st = r.storeName;
-      if (!st) continue;
-      const cur = seats.get(st) || { count: 0, target: 0, people: [] };
-      const c = Number(r.count || 0);
-      const t = Number(r.targetCount || 0);
-      cur.count += c;
-      cur.target += t;
-      cur.people.push({
-        name: r.managerName || '(이름 없음)',
-        role: r.role || '',
-        count: c,
-        target: t,
-        rate: t ? (c / t) * 100 : null,
-      });
-      seats.set(st, cur);
-    }
+    const seats = seatRes?.stores || {};
 
     const lines = (json?.orders || []).filter(
       (o) =>
@@ -72,7 +51,7 @@ export default function TodaySales() {
     );
 
     setFetchedAt(new Date());
-    return { lines, seats: Object.fromEntries(seats) };
+    return { lines, seats };
   }, [tick]);
 
   useEffect(() => {
@@ -98,6 +77,10 @@ export default function TodaySales() {
       if (!byStore.has(s)) byStore.set(s, []);
       byStore.get(s).push(o);
     }
+    // 오늘 판매가 없어도 좌수는 있다 — 매출이 0이라고 매장이 사라지면
+    // 아침에는 표가 통째로 비어 좌수를 볼 수 없다.
+    for (const st of Object.keys(seats)) if (!byStore.has(st)) byStore.set(st, []);
+
     const rows = [...byStore.entries()]
       .map(([store, ls]) => {
         const amount = ls.reduce((a, o) => a + Number(o.amount || 0), 0);
@@ -122,20 +105,23 @@ export default function TodaySales() {
         const seat = seats[store] || null;
         return {
           store, amount, oc, qty, aov: oc ? amount / oc : 0, items,
-          seatCount: seat?.count ?? null,
+          seatToday: seat?.today ?? null,
+          seatCount: seat?.month ?? null,
           seatTarget: seat?.target ?? null,
-          seatRate: seat?.target ? (seat.count / seat.target) * 100 : null,
-          seatPeople: [...(seat?.people || [])].sort((a, b) => b.count - a.count),
+          seatRate: seat?.target ? (seat.month / seat.target) * 100 : null,
+          seatPeople: seat?.people || [],
         };
       })
-      .sort((a, b) => b.amount - a.amount);
+      .filter((r) => r.amount > 0 || r.seatCount)
+      .sort((a, b) => b.amount - a.amount || (b.seatCount || 0) - (a.seatCount || 0));
 
     const total = rows.reduce(
       (a, r) => ({
         amount: a.amount + r.amount, oc: a.oc + r.oc, qty: a.qty + r.qty,
+        seatToday: a.seatToday + (r.seatToday || 0),
         seatCount: a.seatCount + (r.seatCount || 0), seatTarget: a.seatTarget + (r.seatTarget || 0),
       }),
-      { amount: 0, oc: 0, qty: 0, seatCount: 0, seatTarget: 0 },
+      { amount: 0, oc: 0, qty: 0, seatToday: 0, seatCount: 0, seatTarget: 0 },
     );
     return { rows, total };
   }, [data.data]);
@@ -198,7 +184,8 @@ export default function TodaySales() {
                 <th className="right">구매건수</th>
                 <th className="right">수량</th>
                 <th className="right">객단가</th>
-                <th className="right" title="이번 달 누적 좌수 · 오늘 매출과 기준이 다르다">좌수(이번 달)</th>
+                <th className="right" title="오늘 등록된 좌수 — 오늘 매출과 같은 기준">좌수(오늘)</th>
+                <th className="right" title="이번 달 누적 좌수 / 목표">좌수(이번 달)</th>
                 <th style={{ width: 140 }}>비중</th>
               </tr>
             </thead>
@@ -220,6 +207,9 @@ export default function TodaySales() {
                       <td className="right mono">{fmt(r.oc)}건</td>
                       <td className="right mono dim">{fmt(r.qty)}</td>
                       <td className="right mono">{won(r.aov)}</td>
+                      <td className="right mono">
+                        {r.seatToday ? <b>{fmt(r.seatToday)}</b> : <span className="qty-none">-</span>}
+                      </td>
                       <td className="right mono">
                         {r.seatCount == null ? <span className="qty-none">-</span> : (
                           <>
@@ -253,6 +243,7 @@ export default function TodaySales() {
                 <td className="right mono">{fmt(total.oc)}건</td>
                 <td className="right mono">{fmt(total.qty)}</td>
                 <td className="right mono">{won(total.oc ? total.amount / total.oc : 0)}</td>
+                <td className="right mono"><strong>{fmt(total.seatToday)}</strong></td>
                 <td className="right mono">
                   {total.seatCount ? (
                     <>
@@ -285,7 +276,8 @@ function StoreItems({ items, people, expected }) {
               <tr>
                 <th>이름</th>
                 <th>직급</th>
-                <th className="right">좌수</th>
+                <th className="right">오늘</th>
+                <th className="right">이번 달</th>
                 <th className="right">목표</th>
                 <th className="right">달성</th>
               </tr>
@@ -295,12 +287,16 @@ function StoreItems({ items, people, expected }) {
                 <tr key={`${m.name}-${m.role}`}>
                   <td className="strong">{m.name}</td>
                   <td className="dim">{m.role || '-'}</td>
-                  <td className="right mono">{fmt(m.count)}</td>
+                  <td className="right mono">{m.today ? <b>{fmt(m.today)}</b> : <span className="qty-none">-</span>}</td>
+                  <td className="right mono">{fmt(m.month)}</td>
                   <td className="right mono dim">{m.target ? fmt(m.target) : '-'}</td>
                   <td className="right mono">
-                    {m.rate == null ? <span className="qty-none">-</span> : (
-                      <span className={`seat-rate ${m.rate >= expected ? 'up' : 'down'}`} style={{ border: 0, padding: 0, margin: 0 }}>
-                        {m.rate.toFixed(0)}%
+                    {!m.target ? <span className="qty-none">-</span> : (
+                      <span
+                        className={`seat-rate ${(m.month / m.target) * 100 >= expected ? 'up' : 'down'}`}
+                        style={{ border: 0, padding: 0, margin: 0 }}
+                      >
+                        {((m.month / m.target) * 100).toFixed(0)}%
                       </span>
                     )}
                   </td>
