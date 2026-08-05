@@ -906,3 +906,8 @@ button.target-card:hover { border-color: var(--accent, #3b82f6); }
 .inflow-chip.chip-warn { border-color: var(--down, #dc2626); }
 .inflow-chip.chip-warn i { color: var(--down, #dc2626); font-weight: 700; }
 
+
+/* 줄 제목 옆 바로가기 */
+.hub-head-link { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--accent, #3b82f6); text-decoration: none; }
+.hub-head-link:hover { text-decoration: underline; }
+.hub-head { display: flex; align-items: center; gap: 8px; }

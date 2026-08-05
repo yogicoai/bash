@@ -5,6 +5,7 @@ import Link from 'next/link';
 import TodaySales from '@/app/sales/today/TodaySales';
 import DataState from './DataState';
 import { onGet } from '@/lib/api';
+import { ZONES } from '@/lib/zones';
 import { canSync, markSync, waitMinutes } from '@/lib/syncGate';
 import { useAsync } from '@/hooks/useAsync';
 import { useViewMode } from './ViewMode';
@@ -261,6 +262,10 @@ function AdsStrip({ onlineToday }) {
     <>
       <div className="hub-head hub-head-sub">
         실시간 광고 <span>지금까지 집행 · 10분마다 갱신</span>
+        {/* 더 깊은 건 광고 통합에서 본다 — 여기로 다 끌어오면 첫 화면만 느려진다 */}
+        <a className="hub-head-link" href={ZONES.ads} target="_blank" rel="noopener noreferrer">
+          자세히 보기 ↗
+        </a>
       </div>
 
       {/* 위 매출 타일과 같은 카드 언어로 — 숫자를 한 줄에 늘어놓으면 눈이 머물 데가 없다.

@@ -64,12 +64,14 @@ export default function TargetProgress() {
     const inMonth = asOf.slice(0, 7) === month;
     const end = inMonth ? asOf : `${month}-${lastDay}`;
 
-    const [dash, orders, target, period, other] = await Promise.all([
+    const [dash, orders, target, period, other, onDaily] = await Promise.all([
       rtGet('api/jwasu/dashboard', { searchType: 'month', month, date: end, startDate: start, endDate: end }).catch(() => null),
       rtGet('api/orders', { month, store: 'all' }).catch(() => null),
       onGet('api/target', { month }).catch(() => null),
       onGet('api/compare/period', { start, end }).catch(() => null),
       onGet('api/other/overview', { start, end }).catch(() => null),
+      // 온라인 일자별 — 조회 API 가 없어 dash 서버가 export 원장을 접어 준다
+      fetch(`/api/online-daily?month=${month}`, { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
     ]);
 
     // 오프라인 목표 — 같은 매장이 여러 행으로 오므로 매장당 한 번만 더한다
@@ -115,6 +117,10 @@ export default function TargetProgress() {
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
+    const onDailyRows = (onDaily?.success ? onDaily.daily : [])
+      .filter((d) => d.date <= end)
+      .map((d) => ({ date: d.date, sales: d.sales, stores: d.channels }));
+
     const onChannels = [
       ...(period?.rows || [])
         .filter((r) => r.channel !== 'total')
@@ -130,6 +136,7 @@ export default function TargetProgress() {
       elapsed,
       total: target?.totalDays ?? lastDay,
       offDaily,
+      onDailyRows,
       onChannels,
       offline: { target: offTarget, actual: offActual },
       online: {
@@ -154,7 +161,7 @@ export default function TargetProgress() {
     };
     return {
       expected, elapsed: d.elapsed, total: d.total, asOf: d.asOf,
-      offDaily: d.offDaily, onChannels: d.onChannels,
+      offDaily: d.offDaily, onDaily: d.onDailyRows, onChannels: d.onChannels,
       rows: [build('offline', '오프라인', d.offline), build('online', '온라인', d.online)],
     };
   }, [data.data, custom]);
@@ -291,8 +298,11 @@ export default function TargetProgress() {
       {open && (
         <div className="target-detail" ref={detailRef}>
           {open === 'offline'
-            ? <DailyList rows={view.offDaily} />
-            : <ChannelList rows={view.onChannels} />}
+            ? <DailyList rows={view.offDaily} unit="매장" />
+            : view.onDaily?.length
+              // 온라인도 일자별로 — 오프라인과 같은 구조. 펼치면 채널별이 나온다.
+              ? <DailyList rows={view.onDaily} unit="채널" />
+              : <ChannelList rows={view.onChannels} />}
         </div>
       )}
 
@@ -301,7 +311,7 @@ export default function TargetProgress() {
 }
 
 /** 오프라인 일자별 — 원장이 있어 날짜로 쪼갤 수 있다 */
-function DailyList({ rows }) {
+function DailyList({ rows, unit = '매장' }) {
   const [open, setOpen] = useState(null);
   if (!rows?.length) return <p className="summary">아직 이번 달 매출이 없습니다.</p>;
   const max = Math.max(1, ...rows.map((r) => r.sales));
@@ -324,7 +334,7 @@ function DailyList({ rows }) {
                   <tr
                     className={`row-click ${on ? 'row-open' : ''}`}
                     onClick={() => setOpen(on ? null : r.date)}
-                    title={on ? '접기' : '매장별 보기'}
+                    title={on ? '접기' : `${unit}별 보기`}
                   >
                     <td className="strong">
                       <span className="row-caret">{on ? '▾' : '▸'}</span>{' '}
@@ -339,7 +349,7 @@ function DailyList({ rows }) {
                       <td colSpan={3}>
                         <table className="table table-sub">
                           <thead>
-                            <tr><th>매장</th><th className="right">매출</th><th className="right">비중</th></tr>
+                            <tr><th>{unit}</th><th className="right">매출</th><th className="right">비중</th></tr>
                           </thead>
                           <tbody>
                             {r.stores.map((st) => (
