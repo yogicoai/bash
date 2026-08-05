@@ -139,7 +139,7 @@ a { color: inherit; text-decoration: none; }
 .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
 
 /* ── 홈 ── */
-.group { margin-bottom: 30px; }
+.group { margin-bottom: 46px; }
 .group-head { margin-bottom: 12px; }
 .group-head h2 { font-size: 15px; font-weight: 700; margin: 0 0 3px; }
 .group-head p { color: #475569; font-size: 12.5px; margin: 0; }
@@ -707,7 +707,7 @@ button.card { text-align: left; font-family: inherit; color: var(--text); cursor
 
 /* ── 허브 요약 (클릭 없이 보이는 지표) ── */
 .hub {
-  display: grid; gap: 12px; margin-bottom: 28px;
+  display: grid; gap: 14px; margin-bottom: 40px;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
 }
 .hub-tile {
@@ -726,7 +726,7 @@ button.card { text-align: left; font-family: inherit; color: var(--text); cursor
   content: '●'; color: var(--good); margin-right: 5px; font-size: 9px; vertical-align: 1px;
 }
 .hub-live .hub-value { color: var(--good); }
-.hub-head { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+.hub-head { font-size: 13px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 7px; }
 .hub-head span {
   font-size: 10.5px; font-weight: 600; color: var(--good);
   background: rgba(16,185,129,.12); border-radius: 999px; padding: 2px 8px;
@@ -776,7 +776,7 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 /* ── 월 목표 달성률 ── */
 .target-strip {
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 14px 18px; margin: -14px 0 28px; box-shadow: var(--shadow-sm);
+  padding: 18px 20px; margin: 0 0 40px; box-shadow: var(--shadow-sm);
 }
 .target-loading { color: var(--muted); font-size: 12.5px; }
 .target-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -820,7 +820,7 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 /* 채널 상세 위쪽 지표 줄 — 매출(결과)만이 아니라 원인·실입금까지 한눈에 */
 .kpi-row {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px; margin: 4px 0 14px;
+  gap: 12px; margin: 4px 0 16px;
 }
 .kpi-cell {
   display: flex; flex-direction: column; gap: 3px;
@@ -834,7 +834,7 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 .kpi-warn .kpi-value { color: var(--down, #dc2626); }
 
 /* 스마트스토어 유입 경로 — 방문 수가 없어 전환율 대신 쓰는 지표 */
-.inflow-row { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: -6px 0 14px; }
+.inflow-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 18px; }
 .inflow-label { font-size: 11px; color: var(--muted); margin-right: 2px; }
 .inflow-chip {
   display: inline-flex; align-items: baseline; gap: 6px;
@@ -865,13 +865,13 @@ button.hub-tile { text-align: left; font-family: inherit; cursor: pointer; width
 
 
 /* 실시간과 어제 기준을 줄로 가른다 */
-.hub-head-sub { margin-top: 22px; }
+.hub-head-sub { margin-top: 8px; }
 .hub-daily { grid-template-columns: 1fr; }
 
 /* 목표 달성률 — 금액보다 "몇 %"를 앞세운 카드 */
 .target-cards {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px; margin-top: 12px;
+  gap: 14px; margin-top: 14px;
 }
 .target-card {
   padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px;
@@ -901,7 +901,7 @@ button.target-card { width: 100%; text-align: left; cursor: pointer; font: inher
 button.target-card:hover { border-color: var(--accent, #3b82f6); }
 .target-card-open { border-color: var(--accent, #3b82f6); }
 .target-card-more { float: right; font-size: 11px; color: var(--accent, #3b82f6); font-weight: 700; }
-.target-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.target-detail { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
 
 .inflow-chip.chip-warn { border-color: var(--down, #dc2626); }
 .inflow-chip.chip-warn i { color: var(--down, #dc2626); font-weight: 700; }
