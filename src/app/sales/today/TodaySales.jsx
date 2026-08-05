@@ -49,10 +49,18 @@ export default function TodaySales() {
     for (const r of jwasu?.data || []) {
       const st = r.storeName;
       if (!st) continue;
-      const cur = seats.get(st) || { count: 0, target: 0, people: 0 };
-      cur.count += Number(r.count || 0);
-      cur.target += Number(r.targetCount || 0);
-      cur.people += 1;
+      const cur = seats.get(st) || { count: 0, target: 0, people: [] };
+      const c = Number(r.count || 0);
+      const t = Number(r.targetCount || 0);
+      cur.count += c;
+      cur.target += t;
+      cur.people.push({
+        name: r.managerName || '(이름 없음)',
+        role: r.role || '',
+        count: c,
+        target: t,
+        rate: t ? (c / t) * 100 : null,
+      });
       seats.set(st, cur);
     }
 
@@ -117,6 +125,7 @@ export default function TodaySales() {
           seatCount: seat?.count ?? null,
           seatTarget: seat?.target ?? null,
           seatRate: seat?.target ? (seat.count / seat.target) * 100 : null,
+          seatPeople: [...(seat?.people || [])].sort((a, b) => b.count - a.count),
         };
       })
       .sort((a, b) => b.amount - a.amount);
@@ -230,7 +239,7 @@ export default function TodaySales() {
                       <tr className="sub-row">
                         <td />
                         <td colSpan={6}>
-                          <StoreItems items={r.items} />
+                          <StoreItems items={r.items} people={r.seatPeople} expected={expectedPct} />
                         </td>
                       </tr>
                     )}
@@ -262,13 +271,48 @@ export default function TodaySales() {
   );
 }
 
-/** 한 매장이 오늘 판 것 — 금액순 */
-function StoreItems({ items }) {
-  if (!items?.length) return <p className="summary">판매 내역이 없습니다.</p>;
-  const max = Math.max(1, ...items.map((i) => i.amount));
+/** 한 매장을 펼쳤을 때 — 오늘 판 것과, 이번 달 사람별 좌수 */
+function StoreItems({ items, people, expected }) {
+  const max = Math.max(1, ...(items || []).map((i) => i.amount));
 
   return (
     <div className="store-items">
+      {people?.length > 0 && (
+        <>
+          <p className="summary">이번 달 좌수 <b>{people.length}명</b></p>
+          <table className="table table-sub" style={{ marginBottom: 14 }}>
+            <thead>
+              <tr>
+                <th>이름</th>
+                <th>직급</th>
+                <th className="right">좌수</th>
+                <th className="right">목표</th>
+                <th className="right">달성</th>
+              </tr>
+            </thead>
+            <tbody>
+              {people.map((m) => (
+                <tr key={`${m.name}-${m.role}`}>
+                  <td className="strong">{m.name}</td>
+                  <td className="dim">{m.role || '-'}</td>
+                  <td className="right mono">{fmt(m.count)}</td>
+                  <td className="right mono dim">{m.target ? fmt(m.target) : '-'}</td>
+                  <td className="right mono">
+                    {m.rate == null ? <span className="qty-none">-</span> : (
+                      <span className={`seat-rate ${m.rate >= expected ? 'up' : 'down'}`} style={{ border: 0, padding: 0, margin: 0 }}>
+                        {m.rate.toFixed(0)}%
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {!items?.length ? <p className="summary">오늘 판매 내역이 없습니다.</p> : (
+        <>
       <p className="summary">오늘 판매 <b>{items.length}종</b></p>
       <table className="table table-sub">
         <thead>
@@ -292,6 +336,8 @@ function StoreItems({ items }) {
           ))}
         </tbody>
       </table>
+        </>
+      )}
     </div>
   );
 }
