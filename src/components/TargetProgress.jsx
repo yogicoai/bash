@@ -26,6 +26,12 @@ import { useAsync } from '@/hooks/useAsync';
  *     팀이 같은 값을 봐야 하면 각 원천(좌수 관리자·판매분석 사이트)에서 목표를 고치는 게 맞다.
  */
 const KEY = 'dash.monthlyTargets';
+
+/** 더 자세히 볼 곳 — 각자 원래 쓰던 화면으로 보낸다 */
+const MORE = {
+  offline: { href: 'https://yogibo.kr/off/index.html', label: '오프라인 매출 시스템에서 보기' },
+  online: { href: 'https://on-iota-three.vercel.app/', label: '온라인 판매분석에서 보기' },
+};
 const fmt = (n) => Math.round(n || 0).toLocaleString();
 const eok = (n) => {
   const v = Math.round((n || 0) / 10000);
@@ -297,6 +303,13 @@ export default function TargetProgress() {
 
       {open && (
         <div className="target-detail" ref={detailRef}>
+          {/* 여기서 더 파고들 곳으로 넘긴다 — 상품·사원 단위까지 허브로 끌어오면
+              첫 화면만 느려지고, 그 깊이는 원래 화면이 훨씬 잘 보여준다. */}
+          <div className="detail-more">
+            <a href={MORE[open].href} target="_blank" rel="noopener noreferrer">
+              {MORE[open].label} ↗
+            </a>
+          </div>
           {open === 'offline'
             ? <DailyList rows={view.offDaily} unit="매장" />
             : view.onDaily?.length
