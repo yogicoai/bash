@@ -222,6 +222,47 @@ function SmartstoreCheck({ kpis, inflow }) {
  * 몰 목록은 아래 표가 맡고, 여기서는 상품 분류(소파·바디필로우·케어 등)를 본다.
  */
 /** 펼친 상세의 제목 — 채널마다 기준 시점이 달라 그것까지 이름에 담는다 */
+/**
+ * 오늘 광고 — 매출 아래에 붙인다.
+ *
+ * 광고비와 잔액만 쓴다. 플랫폼이 주는 "전환매출"은 매체끼리 같은 주문을 서로
+ * 자기 실적으로 잡아 실제 매출보다 훨씬 크게 나오므로 여기 두면 판단을 망친다.
+ * 대신 잔액이 바닥난 매체는 눈에 띄게 알린다 — 광고가 멈추면 매출이 바로 빠진다.
+ */
+function AdsStrip() {
+  const ads = useAsync(() => fetch('/api/ads', { cache: 'no-store' }).then((r) => r.json()), []);
+  const d = ads.data;
+  if (ads.loading || ads.error || !d?.success || !d.rows?.length) return null;
+
+  return (
+    <>
+      <div className="hub-head hub-head-sub">
+        오늘 광고 <span>지금까지 집행된 광고비</span>
+      </div>
+      <div className="ads-strip">
+        <div className="ads-total">
+          <span className="kpi-label">광고비</span>
+          <b>{won(d.spend)}</b>
+          <span className="kpi-note">전환 {fmt(d.conversions)}건</span>
+        </div>
+        <div className="inflow-row" style={{ margin: 0 }}>
+          {d.rows.map((r) => (
+            <span className={`inflow-chip ${r.balance === 0 ? 'chip-warn' : ''}`} key={r.platform}>
+              {r.platform}<b>{won(r.spend)}</b>
+              {r.balance === 0 && <i>잔액 0</i>}
+            </span>
+          ))}
+        </div>
+      </div>
+      {d.empty?.length > 0 && (
+        <div className="warn-banner">
+          ⚠ {d.empty.join(' · ')} 잔액이 0원입니다 — 광고가 멈출 수 있습니다.
+        </div>
+      )}
+    </>
+  );
+}
+
 const DETAIL_TITLE = {
   offline: '실시간 매장별 매출',
   cafe24: '자사몰 오늘 판매 상품',
@@ -499,6 +540,7 @@ export default function HubSummary() {
         실시간 매출 <span>지금 이 시각까지</span>
       </div>
       <div className="hub">{tiles.map(renderTile)}</div>
+      <AdsStrip />
 
 
       {mode === 'popup' && openDetail && (

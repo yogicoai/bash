@@ -902,3 +902,10 @@ button.target-card:hover { border-color: var(--accent, #3b82f6); }
 .target-card-open { border-color: var(--accent, #3b82f6); }
 .target-card-more { float: right; font-size: 11px; color: var(--accent, #3b82f6); font-weight: 700; }
 .target-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+
+/* 오늘 광고 — 매출 아래 한 줄 */
+.ads-strip { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+.ads-total { display: flex; align-items: baseline; gap: 8px; }
+.ads-total b { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+.inflow-chip.chip-warn { border-color: var(--down, #dc2626); }
+.inflow-chip.chip-warn i { color: var(--down, #dc2626); font-weight: 700; }
