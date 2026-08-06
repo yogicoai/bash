@@ -608,9 +608,9 @@ export default function HubSummary() {
         )}
       </div>
       <div className="hub">{tiles.map(renderTile)}</div>
-      <AdsStrip onlineToday={(cafe24.data?.revenue || 0) + (smartstore.data?.stale ? 0 : smartstore.data?.revenue || 0)} />
 
-
+      {/* 펼친 상세는 누른 타일 바로 아래에 — 광고 줄 뒤로 밀리면 무엇을 눌러서 나온
+          내용인지 이어지지 않는다. */}
       {mode === 'popup' && openDetail && (
         <div className="hub-detail" ref={detailRef}>
           <div className="hub-detail-head">
@@ -622,6 +622,8 @@ export default function HubSummary() {
             : <ChannelDetail channel={openDetail} />}
         </div>
       )}
+
+      <AdsStrip onlineToday={(cafe24.data?.revenue || 0) + (smartstore.data?.stale ? 0 : smartstore.data?.revenue || 0)} />
     </>
   );
 }
