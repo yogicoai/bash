@@ -16,8 +16,12 @@ import { useAsync } from '@/hooks/useAsync';
  * 실적
  *   오프라인 = realtime /api/orders 합계 (제외 없이 전액 — 오프라인 매출 시스템의
  *              "전체 매장 합계"와 같은 값이어야 비교가 되므로)
- *   온라인   = 자사몰 + 스마트스토어(compare/period) + 외부몰(other/overview)
- *              조회 구간을 어제까지로 끊는다 — 온라인 일일매출 리포트와 같은 값이 되도록.
+ *   온라인   = 이카운트 온라인 원장(export sales-online) 합계.
+ *              실시간 API(자사몰·스마트스토어)와 이카운트는 확정 시점이 달라 값이
+ *              어긋난다. 목표 달성률은 어제까지 확정된 숫자를 보는 자리이므로
+ *              오프라인과 같이 이카운트 하나로 맞춘다.
+ *              화면에 펼치는 일자별 값과 같은 원천이라 합계가 저절로 일치한다.
+ *              원장을 못 받으면 예전 방식(실시간 API + 외부몰)으로 물러난다.
  *
  * 목표
  *   기본값은 API에서 읽고(오프라인은 매장 목표 합, 온라인은 채널 목표 합),
@@ -196,7 +200,10 @@ export default function TargetProgress() {
       offline: { target: offTarget, actual: offActual },
       online: {
         target: (target?.cafe24?.target || 0) + (target?.smartstore?.target || 0),
-        actual: mall + outside,
+        actual: onDailyRows.length
+          ? onDailyRows.reduce((a, d) => a + d.sales, 0)
+          : mall + outside,
+        basis: onDailyRows.length ? '이카운트' : '실시간 API',
       },
     };
   }, [tick]);
