@@ -22,8 +22,7 @@ import { useAsync } from '@/hooks/useAsync';
  * 목표
  *   기본값은 API에서 읽고(오프라인은 매장 목표 합, 온라인은 채널 목표 합),
  *   직접 입력하면 그 값이 우선한다.
- *   ⚠ dash에는 DB가 없어 입력값은 이 브라우저에만 저장된다(사람마다 다를 수 있음).
- *     팀이 같은 값을 봐야 하면 각 원천(좌수 관리자·판매분석 사이트)에서 목표를 고치는 게 맞다.
+ *   입력값은 서버(onlineData Mongo)에 저장해 누가 보든 같은 값이 되게 한다.
  */
 const KEY = 'dash.monthlyTargets';
 
@@ -48,13 +47,63 @@ export default function TargetProgress() {
   const detailRef = useRef(null);
   const [draft, setDraft] = useState({ offline: '', online: '' });
 
+  /**
+   * 입력한 목표는 서버에 둔다 — 예전에는 브라우저에만 남아 사람마다 다른 값을 봤다.
+   * 서버에 없고 이 브라우저에만 남아 있으면 한 번 옮겨준다.
+   */
   useEffect(() => {
-    try {
-      setCustom(JSON.parse(localStorage.getItem(KEY) || '{}')[month] || {});
-    } catch {
-      /* 저장값이 깨졌으면 무시 */
-    }
+    let alive = true;
+    (async () => {
+      let saved = null;
+      try {
+        const j = await fetch(`/api/targets?month=${month}`, { cache: 'no-store' }).then((r) => r.json());
+        if (j?.success && j.targets) saved = j.targets;
+      } catch {
+        /* 저장소가 막히면 아래 로컬값이나 원천 기본값으로 */
+      }
+      if (!alive) return;
+
+      if (saved) {
+        setCustom({ offline: saved.offline || 0, online: saved.online || 0 });
+        return;
+      }
+      let local = null;
+      try {
+        local = JSON.parse(localStorage.getItem(KEY) || '{}')[month] || null;
+      } catch {
+        /* 무시 */
+      }
+      if (local && (local.offline || local.online)) {
+        setCustom(local);
+        // 예전에 이 브라우저에만 넣어둔 값을 서버로 올린다
+        fetch('/api/targets', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ month, ...local }),
+        }).catch(() => {});
+      } else {
+        setCustom({});
+      }
+    })();
+    return () => { alive = false; };
   }, [month]);
+
+  // 어제까지 데이터를 다시 읽기 — 이카운트 반영이 늦거나 수집이 밀렸을 때
+  const [tick, setTick] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+
+  async function resync() {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      // 수집을 한 번 돌리고(서버 잠금이 알아서 걸러 준다) 잠시 뒤 다시 읽는다
+      await fetch('/api/auto-sync', { cache: 'no-store' }).catch(() => {});
+      await new Promise((r) => setTimeout(r, 12_000));
+    } finally {
+      setTick((t) => t + 1);
+      setSyncing(false);
+    }
+  }
 
   const data = useAsync(async () => {
     const lastDay = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
@@ -150,7 +199,7 @@ export default function TargetProgress() {
         actual: mall + outside,
       },
     };
-  }, []);
+  }, [tick]);
 
   const view = useMemo(() => {
     if (!data.data) return null;
@@ -187,25 +236,21 @@ export default function TargetProgress() {
       if (v > 0) next[k] = v;
     }
     setCustom(next);
-    try {
-      const all = JSON.parse(localStorage.getItem(KEY) || '{}');
-      all[month] = next;
-      localStorage.setItem(KEY, JSON.stringify(all));
-    } catch {
-      /* 저장 실패해도 이번 세션에는 반영된다 */
-    }
+    fetch('/api/targets', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ month, ...next }),
+    }).catch(() => {});
     setEditing(false);
   }
 
   function reset() {
     setCustom({});
-    try {
-      const all = JSON.parse(localStorage.getItem(KEY) || '{}');
-      delete all[month];
-      localStorage.setItem(KEY, JSON.stringify(all));
-    } catch {
-      /* 무시 */
-    }
+    fetch('/api/targets', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ month }),
+    }).catch(() => {});
     setEditing(false);
   }
 
@@ -228,6 +273,9 @@ export default function TargetProgress() {
             지금쯤이면 <b>{view.expected.toFixed(1)}%</b>
           </span>
         )}
+        <button type="button" className="btn btn-sm" onClick={resync} disabled={syncing} title="어제까지 데이터를 다시 읽습니다">
+          {syncing ? '동기화 중…' : '↻ 동기화'}
+        </button>
         <button type="button" className="btn btn-sm" onClick={editing ? () => setEditing(false) : openEditor}>
           {editing ? '닫기' : '목표 입력'}
         </button>
@@ -250,7 +298,7 @@ export default function TargetProgress() {
           <button type="button" className="btn btn-download" onClick={save}>저장</button>
           <button type="button" className="btn" onClick={reset}>기본값</button>
           <p className="target-note">
-            이 브라우저에만 저장됩니다 — 팀이 같은 값을 보려면 좌수 관리자·판매분석 사이트에서 목표를 고쳐주세요.
+            저장하면 모두가 같은 목표를 봅니다. 비우고 저장하면 원천 기본값으로 돌아갑니다.
           </p>
         </div>
       )}
