@@ -919,3 +919,7 @@ button.target-card:hover { border-color: var(--accent, #3b82f6); }
 .detail-more { display: flex; justify-content: flex-end; margin-bottom: 10px; }
 .detail-more a { font-size: 12px; font-weight: 700; color: var(--accent, #3b82f6); text-decoration: none; }
 .detail-more a:hover { text-decoration: underline; }
+
+/* 좌수 집계에서 빠지는 사람 — 감추지 않고 이유를 보인다 */
+.row-excluded td { opacity: 0.55; }
+.row-excluded .pill { margin-left: 6px; font-size: 10px; }

@@ -284,14 +284,17 @@ function StoreItems({ items, people, expected }) {
             </thead>
             <tbody>
               {people.map((m) => (
-                <tr key={`${m.name}-${m.role}`}>
+                <tr key={`${m.name}-${m.role}`} className={m.excluded ? 'row-excluded' : ''}>
                   <td className="strong">{m.name}</td>
-                  <td className="dim">{m.role || '-'}</td>
+                  <td className="dim">
+                    {m.role || '-'}
+                    {m.excluded && <span className="pill" title="이 매장은 명단에 있는 사람만 좌수를 셉니다">집계 제외</span>}
+                  </td>
                   <td className="right mono">{m.today ? <b>{fmt(m.today)}</b> : <span className="qty-none">-</span>}</td>
-                  <td className="right mono">{fmt(m.month)}</td>
-                  <td className="right mono dim">{m.target ? fmt(m.target) : '-'}</td>
+                  <td className="right mono">{m.excluded ? <span className="qty-none">-</span> : fmt(m.month)}</td>
+                  <td className="right mono dim">{m.excluded || !m.target ? <span className="qty-none">-</span> : fmt(m.target)}</td>
                   <td className="right mono">
-                    {!m.target ? <span className="qty-none">-</span> : (
+                    {m.excluded || !m.target ? <span className="qty-none">-</span> : (
                       <span
                         className={`seat-rate ${(m.month / m.target) * 100 >= expected ? 'up' : 'down'}`}
                         style={{ border: 0, padding: 0, margin: 0 }}

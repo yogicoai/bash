@@ -1,4 +1,5 @@
 import { upstreamBase } from '@/lib/upstream';
+import { isAllowedInStore } from '@/lib/yleague/rules';
 
 /**
  * 좌수 — 오늘 / 이번 달, 매장별·사람별.
@@ -9,6 +10,10 @@ import { upstreamBase } from '@/lib/upstream';
  *
  * 원장에 revenue 필드가 있지만 값이 채워지지 않아(전부 0) 쓰지 않는다.
  * 매출은 api/orders 가 원천이다.
+ *
+ * 매장별 노출 규칙(Y리그와 같은 것)을 여기서도 적용한다 — 스타필드하남은
+ * 한철우만 좌수를 센다. 명단 밖 사람은 목록에 남기되 좌수는 세지 않고
+ * 제외 표시만 한다. 아예 감추면 왜 합계가 안 맞는지 알 수 없다.
  */
 
 const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
@@ -47,7 +52,7 @@ export async function GET(req) {
   };
   const person = (st, name, role) => {
     const key = `${name}|${role}`;
-    if (!st.people.has(key)) st.people.set(key, { name, role, today: 0, month: 0, target: 0 });
+    if (!st.people.has(key)) st.people.set(key, { name, role, today: 0, month: 0, target: 0, excluded: false });
     return st.people.get(key);
   };
 
@@ -57,10 +62,17 @@ export async function GET(req) {
     const date = String(r.date || '').slice(0, 10);
     if (!date.startsWith(month)) continue;
     const n = Number(r.count || 0);
-    byDate.set(date, (byDate.get(date) || 0) + n);
+    const name = r.managerName || '(이름 없음)';
+    const storeName = r.storeName || '미지정';
+    const st = store(storeName);
+    const p = person(st, name, r.role || '');
 
-    const st = store(r.storeName || '미지정');
-    const p = person(st, r.managerName || '(이름 없음)', r.role || '');
+    // 명단 밖이면 사람은 남기되 좌수는 세지 않는다
+    if (!isAllowedInStore(name, storeName)) {
+      p.excluded = true;
+      continue;
+    }
+    byDate.set(date, (byDate.get(date) || 0) + n);
     st.month += n;
     p.month += n;
     if (date === today) {
@@ -75,6 +87,11 @@ export async function GET(req) {
     const st = store(r.storeName);
     const p = person(st, r.managerName || '(이름 없음)', r.role || '');
     const t = Number(r.targetCount || 0);
+    if (!isAllowedInStore(p.name, r.storeName)) {
+      p.excluded = true;
+      p.target = 0;
+      continue;
+    }
     p.target = t;
     st.target += t;
   }
