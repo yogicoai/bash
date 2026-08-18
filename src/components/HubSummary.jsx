@@ -483,7 +483,26 @@ export default function HubSummary() {
     const k = json?.kpis;
     if (!k) return null;
     const syncedTo = status?.meta?.to || null;
-    return { revenue: k.revenue, orders: k.orders, syncedTo, stale: Boolean(syncedTo && syncedTo < today) };
+    /**
+     * 0원과 "아직 안 들어왔다"는 다르다.
+     *
+     * 스마트스토어 수집은 네이버의 "변경된 주문" API 로 훑는데, 갓 결제된 주문은
+     * 발주확인 전이라 변경 이력에 안 잡힌다. 그래서 당일 주문이 실제로 있어도
+     * 한동안 0건으로 온다(다음 날이면 들어온다).
+     *
+     * 그걸 "0원"으로 적으면 판매가 없었다고 읽힌다. 장사가 도는 시간대에 0건이면
+     * 판매 없음이 아니라 반영 전으로 보는 게 맞다.
+     */
+    const hour = Number(new Date().toLocaleString('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hour12: false }));
+    const notYet = !k.orders && hour >= 11;
+
+    return {
+      revenue: k.revenue,
+      orders: k.orders,
+      syncedTo,
+      notYet,
+      stale: Boolean(syncedTo && syncedTo < today),
+    };
   }, []);
 
   /**
@@ -529,13 +548,19 @@ export default function HubSummary() {
       external: true,
       detailKey: 'smartstore',
       label: '스마트스토어',
-      value: smartstore.data ? (smartstore.data.stale ? '동기화 필요' : won(smartstore.data.revenue)) : null,
+      value: smartstore.data
+        ? smartstore.data.stale ? '동기화 필요'
+          : smartstore.data.notYet ? '반영 전'
+          : won(smartstore.data.revenue)
+        : null,
       sub: smartstore.data
         ? smartstore.data.stale
           ? `${smartstore.data.syncedTo}까지만 반영됨 — 판매분석에서 재동기화`
-          : `주문 ${fmt(smartstore.data.orders)}건`
+          : smartstore.data.notYet
+            ? '주문이 있어도 발주확인 전에는 안 잡힙니다 — 보통 다음 날 채워집니다'
+            : `주문 ${fmt(smartstore.data.orders)}건`
         : null,
-      tone: smartstore.data?.stale ? 'stale' : null,
+      tone: smartstore.data?.stale || smartstore.data?.notYet ? 'stale' : null,
       syncKey: 'smartstore',
       onSynced: () => smartstore.reload(),
       state: smartstore,
