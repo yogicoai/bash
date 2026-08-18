@@ -13,9 +13,9 @@ import { upstreamBase } from '@/lib/upstream';
 const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
 export async function GET(req) {
-  const token = process.env.EXPORT_TOKEN;
+  const token = String(process.env.EXPORT_TOKEN || '').trim();
   if (!token) {
-    return Response.json({ success: false, error: 'EXPORT_TOKEN 미설정' }, { status: 500 });
+    return Response.json({ success: false, error: 'dash 에 EXPORT_TOKEN 이 없습니다' }, { status: 500 });
   }
 
   const today = todayKST();
@@ -35,6 +35,9 @@ export async function GET(req) {
       headers: { authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(45_000),
     });
+    if (res.status === 401) {
+      throw new Error('EXPORT_TOKEN 이 onlineData 값과 다릅니다 (양쪽을 같은 값으로 맞추고 각각 Redeploy)');
+    }
     if (!res.ok) throw new Error(`export → ${res.status}`);
     const json = await res.json();
     rows = json?.rows || json?.data || (Array.isArray(json) ? json : []);

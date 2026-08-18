@@ -10,8 +10,8 @@ import { upstreamBase } from '@/lib/upstream';
 const base = () => `${upstreamBase('on')}/api/dash-targets`;
 
 async function call(method, url, body) {
-  const token = process.env.EXPORT_TOKEN;
-  if (!token) throw new Error('EXPORT_TOKEN 미설정');
+  const token = String(process.env.EXPORT_TOKEN || '').trim();
+  if (!token) throw new Error('dash 에 EXPORT_TOKEN 이 없습니다');
   const res = await fetch(url, {
     method,
     cache: 'no-store',
@@ -23,6 +23,9 @@ async function call(method, url, body) {
     signal: AbortSignal.timeout(20_000),
   });
   const json = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    throw new Error('EXPORT_TOKEN 이 onlineData 값과 다릅니다 (양쪽을 같은 값으로 맞추고 각각 Redeploy)');
+  }
   if (!res.ok) throw new Error(json?.error || `목표 저장소 → ${res.status}`);
   return json;
 }
