@@ -261,6 +261,14 @@ export const GROUPS = [
         source: 'vmd-img · Next',
       },
       {
+        name: '이미지 생성',
+        href: ZONES.imageGen,
+        slug: 'zone-image-gen',
+        icon: '🖼️',
+        status: 'external',
+        desc: '이미지 생성 프로그램',
+      },
+      {
         name: '명함 발주 관리',
         href: ZONES.nameCard,
         slug: 'zone-namecard',

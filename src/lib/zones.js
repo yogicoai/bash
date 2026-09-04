@@ -19,6 +19,7 @@ export const ZONES = {
   evaluation: env('NEXT_PUBLIC_ZONE_EVALUATION', 'https://evaluation-xi-ten.vercel.app/'),
   design: env('NEXT_PUBLIC_ZONE_DESIGN', 'https://design-t-omega.vercel.app/'),
   priceImg: env('NEXT_PUBLIC_ZONE_PRICE_IMG', 'https://vmd-img.vercel.app/'),
+  imageGen: env('NEXT_PUBLIC_ZONE_IMAGE_GEN', 'https://design-create-ashen.vercel.app/'),
   nameCard: env('NEXT_PUBLIC_ZONE_NAMECARD', 'https://card-six-zeta.vercel.app/'),
   video: env('NEXT_PUBLIC_ZONE_VIDEO', 'https://video-nine-nu.vercel.app/'),
   warehouse: env('NEXT_PUBLIC_ZONE_WAREHOUSE', 'https://vmd-whouse.vercel.app/'),
