@@ -323,6 +323,17 @@ export const GROUPS = [
         desc: '배송 · 교환/환불 · A/S 상담 셀프 가이드',
         source: 'cs-self-guide · Next 16 + TS',
       },
+      {
+        name: '배송조회',
+        href: ZONES.parcel,
+        slug: 'parcel',
+        // 자체 로그인 쿠키가 SameSite=Lax 라 다른 사이트(dash) 안의 iframe 에는
+        // 실리지 않는다 — 팝업에서는 로그인이 안 물리므로 새 창으로 연다
+        windowOnly: true,
+        icon: '🚚',
+        status: 'external',
+        desc: '택배 배송 조회 시스템',
+      },
     ],
   },
   {

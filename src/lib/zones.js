@@ -16,6 +16,7 @@ export const ZONES = {
   blog: env('NEXT_PUBLIC_ZONE_BLOG', 'https://blog-livid-sigma-32.vercel.app/'),
   b2b: env('NEXT_PUBLIC_ZONE_B2B', 'https://mktcr.vercel.app/send'),
   cs: env('NEXT_PUBLIC_ZONE_CS', 'https://cs-fawn-alpha.vercel.app/admin'),
+  parcel: env('NEXT_PUBLIC_ZONE_PARCEL', 'https://parcel-service.vercel.app/'),
   evaluation: env('NEXT_PUBLIC_ZONE_EVALUATION', 'https://evaluation-xi-ten.vercel.app/'),
   design: env('NEXT_PUBLIC_ZONE_DESIGN', 'https://design-t-omega.vercel.app/'),
   priceImg: env('NEXT_PUBLIC_ZONE_PRICE_IMG', 'https://vmd-img.vercel.app/'),

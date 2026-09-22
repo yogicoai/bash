@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useEmbed } from './EmbedModal';
 import { popupHref } from './ViewMode';
 import { resolveHref } from '@/lib/zones';
@@ -28,6 +29,44 @@ const WINDOW_TAG = { cls: 'tag-external', label: '새 창 ↗' };
  * 그 안에 또 버튼(📖)을 넣을 수 없기 때문이다. 배지 줄 자체는 클릭을 통과시키고
  * 📖 만 클릭을 받으므로, 배지 위를 눌러도 카드가 열리는 동작은 그대로다.
  */
+/**
+ * 새 창으로 여는 화면의 비밀번호 — 카드 아래에 둔다.
+ *
+ * 팝업으로 여는 화면은 팝업 하단에 비밀번호가 뜨지만, 새 창으로 바로 여는
+ * 화면은 팝업을 거치지 않아 비밀번호를 볼 곳이 없었다. 값은 dash 로그인을
+ * 통과한 사람에게만 서버(/api/screen-password)가 내려준다.
+ */
+function CardPassword({ slug }) {
+  const [pw, setPw] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/screen-password?slug=${encodeURIComponent(slug)}`)
+      .then((r) => r.json())
+      .then((j) => alive && setPw(j.password || null))
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [slug]);
+
+  if (!pw) return null;
+  return (
+    <span className="card-pw">
+      <i>비밀번호</i>
+      <code>{pw}</code>
+      <button
+        type="button"
+        onClick={() => navigator.clipboard.writeText(pw).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        })}
+      >
+        {copied ? '복사됨 ✓' : '복사'}
+      </button>
+    </span>
+  );
+}
+
 export default function DashCard({ item }) {
   const { open } = useEmbed();
   const tag = item.windowOnly ? WINDOW_TAG : TAG[item.status] ?? TAG.planned;
@@ -83,10 +122,15 @@ export default function DashCard({ item }) {
   // 팝업 안에서 끝까지 못 가는 화면은 처음부터 새 창으로 보낸다.
   // 팝업을 띄워 봐야 "여기선 안 되니 크게 열라"는 안내만 한 번 더 거치게 된다.
   if (item.windowOnly) {
-    return slot(
-      <a className="card card-link" href={resolveHref(item)} target="_blank" rel="noopener noreferrer">
-        {body}
-      </a>,
+    return (
+      <div className="card-slot">
+        <a className="card card-link" href={resolveHref(item)} target="_blank" rel="noopener noreferrer">
+          {body}
+        </a>
+        {tags}
+        {/* 링크 안에 버튼을 넣을 수 없어 배지 줄처럼 카드 위에 겹쳐 둔다 */}
+        {item.slug && <CardPassword slug={item.slug} />}
+      </div>
     );
   }
 

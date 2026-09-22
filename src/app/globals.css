@@ -923,3 +923,18 @@ button.target-card:hover { border-color: var(--accent, #3b82f6); }
 /* 좌수 집계에서 빠지는 사람 — 감추지 않고 이유를 보인다 */
 .row-excluded td { opacity: 0.55; }
 .row-excluded .pill { margin-left: 6px; font-size: 10px; }
+
+/* 새 창 카드의 비밀번호 — 카드 오른쪽 아래, 클릭은 복사 버튼만 받는다 */
+.card-slot > .card-pw {
+  position: absolute; right: 14px; bottom: 12px; z-index: 1;
+  display: inline-flex; align-items: center; gap: 6px; font-size: 11px;
+}
+.card-pw i { font-style: normal; color: var(--muted); }
+.card-pw code {
+  padding: 1px 6px; border-radius: 6px; background: rgba(148, 163, 184, 0.16);
+  font-weight: 700; letter-spacing: 0.02em;
+}
+.card-pw button {
+  border: 1px solid var(--line); background: transparent; color: var(--accent, #3b82f6);
+  border-radius: 6px; padding: 1px 7px; font-size: 11px; font-weight: 700; cursor: pointer;
+}
