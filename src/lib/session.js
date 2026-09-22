@@ -6,13 +6,20 @@
  */
 
 export const COOKIE_NAME = 'dash_session';
-export const MAX_AGE_SEC = 60 * 60 * 24; // 24시간 — 한 번 넣으면 그날은 다시 안 묻는다
+/**
+ * 7일 — 한 번 넣으면 일주일은 다시 묻지 않는다.
+ * 매일 여는 화면이라 하루 단위로 비밀번호를 묻는 건 번거롭기만 했다.
+ * 비밀번호 하나를 여럿이 쓰는 구조라 이보다 길게는 두지 않는다 — 기기를
+ * 잃어버리거나 사람이 바뀌었을 때 일주일이면 저절로 끊긴다.
+ */
+export const MAX_AGE_SEC = 60 * 60 * 24 * 7;
 
 /**
  * 남은 시간이 이보다 적으면 쿠키를 새로 발급한다(슬라이딩 갱신).
- * 아침에 로그인하고 종일 쓰다가 저녁에 갑자기 튕기는 걸 막는다.
+ * 계속 쓰는 사람은 절반(3.5일)이 지날 때마다 조용히 연장되어 끊기지 않고,
+ * 일주일 동안 한 번도 안 들어온 사람만 다시 비밀번호를 넣는다.
  */
-export const RENEW_BEFORE_SEC = 60 * 60 * 12;
+export const RENEW_BEFORE_SEC = Math.floor(MAX_AGE_SEC / 2);
 
 const enc = new TextEncoder();
 
