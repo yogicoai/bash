@@ -1023,7 +1023,7 @@ button.target-card:hover { border-color: var(--accent, #3b82f6); }
 /* 펼침 — max-height 로 미끄러지듯 */
 .dm-body { max-height: 0; overflow: hidden; transition: max-height .4s ease; border-top: 1px solid transparent; }
 .dm-open .dm-body { border-top-color: var(--border); }
-.dm-frame { display: block; width: 100%; border: 0; background: #f4f2ed; } /* 페이지는 메일용이라 라이트 고정 */
+.dm-frame { display: block; width: 100%; border: 0; background: #f2f4f6; } /* 페이지는 메일용이라 라이트 고정(토스풍 바탕색) */
 .dm-foot { display: flex; justify-content: flex-end; padding: 8px 14px; }
 .dm-foot a { font-size: 12px; font-weight: 700; color: var(--accent); text-decoration: none; }
 .dm-foot a:hover { text-decoration: underline; }
