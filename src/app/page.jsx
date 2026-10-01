@@ -3,6 +3,8 @@ import { ViewModeToggle } from '@/components/ViewMode';
 import { ThemeToggle } from '@/components/Theme';
 import HubSummary from '@/components/HubSummary';
 import TargetProgress from '@/components/TargetProgress';
+import TodayWatch from '@/components/TodayWatch';
+import DailyMonitoring from '@/components/DailyMonitoring';
 import { GROUPS } from '@/lib/links';
 
 export default function HomePage() {
@@ -29,7 +31,13 @@ export default function HomePage() {
         </div>
       </header>
 
-      <TargetProgress />
+      {/* 맨 위 — 접힌 일일 모니터링(누르면 전날 데이터 전체가 펼쳐진다 · 메일과 같은 화면) */}
+      <DailyMonitoring />
+      {/* 어제 기준 이상 신호를 먼저 — "오늘 챙길 것"의 목표 경보가 아래 목표 진행으로 이어진다 */}
+      <TodayWatch />
+      <div id="target-progress">
+        <TargetProgress />
+      </div>
       <HubSummary />
 
       {GROUPS.map((group) => (
