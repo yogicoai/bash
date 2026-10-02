@@ -32,7 +32,9 @@ export async function proxy(req) {
 
   const url = req.nextUrl.clone();
   url.pathname = '/login';
-  url.search = pathname === '/' ? '' : `?next=${encodeURIComponent(pathname)}`;
+  // 가려던 주소를 쿼리까지 기억한다 — 공유 링크 /?daily=1(일일 모니터링 펼쳐 열기)이 로그인 뒤에도 살아 있게
+  const back = pathname + req.nextUrl.search;
+  url.search = back === '/' ? '' : `?next=${encodeURIComponent(back)}`;
   return NextResponse.redirect(url);
 }
 

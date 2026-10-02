@@ -10,7 +10,8 @@ import { ZONES } from '@/lib/zones';
  * iframe 으로 넣는다. 다른 독립 앱처럼 dash 가 다시 만들지 않는다(같은 숫자를 두 곳에서 계산하지 않게).
  *   · 처음 펼칠 때 불러온다 — 홈을 열 때마다 무거운 페이지를 부르지 않게. 한 번 펼친 뒤엔 접어도 유지.
  *   · 페이지가 postMessage 로 알려 주는 높이에 iframe 을 맞춘다 — 안쪽 스크롤 없이 통째로 보인다.
- *   · ?daily=1 또는 #daily 로 들어오면 펼친 채로 연다(메일 본문 "웹에서 보기" 링크).
+ *   · ?daily=1 또는 #daily 로 들어오면 펼친 채로 연다.
+ *   · standalone — 전용 주소 /daily(공유·메일 링크용)에서 쓴다. 접고 펴는 머리 없이 처음부터 펼친 화면.
  */
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 /** 한국 기준 어제 → 9/30(수) — 페이지 기본 기준일(어제)과 같다 */
@@ -22,9 +23,9 @@ function yesterdayLabel() {
 const SRC = `${ZONES.online.replace(/\/$/, '')}/dashboards/daily_mail.html`;
 const ORIGIN = (() => { try { return new URL(SRC).origin; } catch { return null; } })();
 
-export default function DailyMonitoring() {
-  const [open, setOpen] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+export default function DailyMonitoring({ standalone = false }) {
+  const [open, setOpen] = useState(standalone);
+  const [loaded, setLoaded] = useState(standalone);
   const [height, setHeight] = useState(1400);
   const [label, setLabel] = useState('');
 
@@ -44,6 +45,17 @@ export default function DailyMonitoring() {
   function toggle() {
     setOpen((o) => !o);
     setLoaded(true);
+  }
+
+  if (standalone) {
+    return (
+      <section className="dm dm-open dm-page" aria-label="일일 모니터링">
+        <iframe className="dm-frame" src={SRC} title="일일 모니터링" style={{ height }} />
+        <div className="dm-foot">
+          <a href={SRC} target="_blank" rel="noopener noreferrer">새 창으로 크게 보기 ↗</a>
+        </div>
+      </section>
+    );
   }
 
   return (
