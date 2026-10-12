@@ -48,13 +48,20 @@ const WHERE = {
 /**
  * 팀별 심각(오프라인 매장 · 온라인 프로모션 · 광고) → 바로 갈 곳.
  * onlineData 가 준 링크는 그쪽 기준 주소(/?openpt=1 = 프로모션 등록 창)라 온라인 판매분석 주소를 붙여 새 탭으로 연다.
- * 링크가 없는 항목(매장 등)은 자세한 내용이 있는 일일 모니터링으로 보낸다.
+ *
+ * 링크가 없으면 팀이 평소 쓰는 화면으로 보낸다 — 일일 모니터링으로 보내면 읽고 나서
+ * 결국 그 화면을 다시 찾아 들어가야 한다. 손을 쓰는 곳으로 바로 보내는 게 맞다.
+ * 오프라인 매장은 매장별 풀이가 일일 모니터링에만 있어 그대로 둔다.
  */
 const ON_BASE = String(ZONES.online || '').replace(/\/$/, '');
+const TEAM_WHERE = {
+  온라인: { href: ZONES.online, label: '온라인 판매분석', external: true },
+  광고: { href: ZONES.ads, label: '광고 통합', external: true },
+};
 const teamGo = (c) => {
   const l = c.링크;
   if (l && l.href) return { href: /^https?:/.test(l.href) ? l.href : ON_BASE + l.href, label: l.label, external: true };
-  return { href: '/daily', label: '일일 모니터링' };
+  return TEAM_WHERE[c.팀] || { href: '/daily', label: '일일 모니터링' };
 };
 /** 스캔 실패 키 → 화면 이름 */
 const TASK = { sales: '매출', ad: '광고', traffic: '트래픽', cs: 'CS', stock: '재고', pace: '목표', returns: '반품', jwasu: '좌수', funnel: '퍼널' };
