@@ -45,6 +45,17 @@ const WHERE = {
   좌수: { href: 'https://yogibo.kr/off/y_League.html', label: 'Y리그', external: true },
   퍼널: { href: `${ZONES.online.replace(/\/$/, '')}/dashboards/funnel_daily.html`, label: '일일 퍼널 점검', external: true },
 };
+/**
+ * 팀별 심각(오프라인 매장 · 온라인 프로모션 · 광고) → 바로 갈 곳.
+ * onlineData 가 준 링크는 그쪽 기준 주소(/?openpt=1 = 프로모션 등록 창)라 온라인 판매분석 주소를 붙여 새 탭으로 연다.
+ * 링크가 없는 항목(매장 등)은 자세한 내용이 있는 일일 모니터링으로 보낸다.
+ */
+const ON_BASE = String(ZONES.online || '').replace(/\/$/, '');
+const teamGo = (c) => {
+  const l = c.링크;
+  if (l && l.href) return { href: /^https?:/.test(l.href) ? l.href : ON_BASE + l.href, label: l.label, external: true };
+  return { href: '/daily', label: '일일 모니터링' };
+};
 /** 스캔 실패 키 → 화면 이름 */
 const TASK = { sales: '매출', ad: '광고', traffic: '트래픽', cs: 'CS', stock: '재고', pace: '목표', returns: '반품', jwasu: '좌수', funnel: '퍼널' };
 
@@ -76,8 +87,13 @@ function Go({ w }) {
 }
 
 function Body({ d }) {
-  const list = d.경보 || [];
-  const bad = list.filter((a) => a.심각도 === '🔴').length;
+  // 전사 경보 + 팀별 심각 — 일일 모니터링 "오늘 챙길 것"의 팀별(오프라인 · 온라인 · 광고) 심각을 여기에도 올린다(2026-10-12).
+  //   순서: 전사 심각 → 팀별 심각 → 전사 주의. 팀별 주의는 일일 모니터링에서 본다.
+  const isBad = (a) => a.심각도 === '🔴';
+  const base = d.경보 || [];
+  const team = (d.팀별심각 || []).map((c) => ({ 심각도: '🔴', 분야: `${c.팀} · ${c.이름}`, 내용: c.글, go: teamGo(c) }));
+  const list = [...base.filter(isBad), ...team, ...base.filter((a) => !isBad(a))];
+  const bad = list.filter(isBad).length;
   const y = d.어제실적 || {};
   const stock = y.재고;
   const failed = (d.스캔실패 || []).map((s) => {
@@ -107,7 +123,7 @@ function Body({ d }) {
                 <span className="watch-sev">{sev === 'bad' ? '심각' : '주의'}</span>
                 <span className="watch-area">{a.분야}</span>
                 <span className="watch-text">{a.내용}</span>
-                <Go w={WHERE[a.분야]} />
+                <Go w={a.go || WHERE[a.분야]} />
               </li>
             );
           })}
