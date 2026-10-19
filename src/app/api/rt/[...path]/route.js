@@ -1,6 +1,6 @@
 import { proxy } from '@/lib/upstream';
 
-// realtime(web.js) 프록시 — /api/rt/api/orders → {REALTIME_API}/api/orders
+// 예전 realtime(web.js) 경로 프록시 — /api/rt/api/orders → {OFFORDER_API}/api/orders (2026-10-19 offorder로 통합)
 async function handler(req, { params }) {
   const { path } = await params;
   return proxy('rt', path, req);

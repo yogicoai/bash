@@ -1,9 +1,9 @@
 /**
  * 원천 API 프록시.
  *
- * 오프라인 대시보드가 붙는 백엔드는 두 개다.
- *   realtime  — Desktop/DB 데이터/실시간 상품전송/실시간 순위/web.js  (jwasu/*, orders, months, stock, warehouse-stock …)
- *   offorder  — Desktop/오프라인/index.js                              (verify-pin, stock/snapshot/*, ordersOffData, work-hours …)
+ * 오프라인 대시보드가 붙는 백엔드는 두 개였다. 2026-10-19 realtime 기능을 offorder로 옮겨 지금은 둘 다 offorder다.
+ *   rt   — 예전 realtime(web.js) 경로: jwasu/*, orders, months, stock, warehouse-stock … → Desktop/오프라인/realtimeRoutes.js
+ *   off  — Desktop/오프라인/index.js (verify-pin, stock/snapshot/*, ordersOffData, work-hours …)
  *
  * 둘 다 라우트에 인증이 없다. 그래서 브라우저가 직접 부르지 않고
  * 반드시 이 서버사이드 프록시를 거치게 한다 — 주소가 클라이언트 번들에 안 남고,
@@ -11,7 +11,8 @@
  */
 
 const UPSTREAMS = {
-  rt: process.env.REALTIME_API || 'https://port-0-realtime-lzgmwhc4d9883c97.sel4.cloudtype.app',
+  // 예전 REALTIME_API(realtime 주소)가 환경변수에 남아 있어도 offorder로 보낸다
+  rt: process.env.OFFORDER_API || 'https://port-0-offorder-lzgmwhc4d9883c97.sel4.cloudtype.app',
   off: process.env.OFFORDER_API || 'https://port-0-offorder-lzgmwhc4d9883c97.sel4.cloudtype.app',
   // 온라인 판매분석(onlineData) — 홈 요약의 온라인 매출에 쓴다
   on: process.env.ONLINEDATA_API || 'https://on-iota-three.vercel.app',
