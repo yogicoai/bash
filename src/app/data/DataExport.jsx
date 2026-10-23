@@ -18,7 +18,7 @@ function McpHealth() {
 
 /**
  * 설정 파일 받기 — dash 로그인을 통과했으면 바로 내려받는다.
- * 토큰은 서버에서만 읽어 파일에 담으므로 클라이언트 번들에 남지 않는다.
+ * 토큰 자리는 비어 있다(2026-10-22 개인별 토큰으로 바뀜) — 개인 메시지로 받은 토큰을 넣어 쓴다.
  */
 function ConfigDownload() {
   const [error, setError] = useState('');
@@ -213,7 +213,7 @@ export default function McpGuide() {
         <div className="cfg-box">
           <div className="cfg-head">
             <strong>설정파일 내려받기</strong>
-            <span>접속 토큰이 들어 있습니다. 외부에 공유하지 마세요.</span>
+            <span>파일의 「발급받은_개인_토큰」 자리를 개인 메시지로 받은 토큰으로 바꿔 넣으세요. 토큰은 외부에 공유하지 마세요.</span>
           </div>
           <ConfigDownload />
         </div>
