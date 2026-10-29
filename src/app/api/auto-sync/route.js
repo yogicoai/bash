@@ -1,5 +1,5 @@
 import { after } from 'next/server';
-import { upstreamBase } from '@/lib/upstream';
+import { upstreamAuthHeaders, upstreamBase } from '@/lib/upstream';
 
 /**
  * 페이지를 열 때 온라인 수집을 대신 눌러준다.
@@ -38,6 +38,7 @@ const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/
 async function call(path, ms = 25_000) {
   const res = await fetch(`${upstreamBase('on')}/${path}`, {
     cache: 'no-store',
+    headers: upstreamAuthHeaders('on'),
     signal: AbortSignal.timeout(ms),
   });
   if (!res.ok) throw new Error(`${path} → ${res.status}`);

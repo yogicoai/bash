@@ -25,6 +25,16 @@ export function upstreamBase(name) {
 }
 
 /**
+ * onlineData 는 대시보드 전체를 로그인으로 잠근다(onlineData/middleware.js).
+ * dash 서버가 부르는 집계 주소는 개인 Export 토큰(EXPORT_TOKEN, 서버에서만 읽음)으로 통과한다.
+ */
+export function upstreamAuthHeaders(name) {
+  if (name !== 'on') return {};
+  const token = String(process.env.EXPORT_TOKEN || '').trim();
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
+/**
  * 업스트림으로 요청을 그대로 흘려보낸다.
  * @param {'rt'|'off'} name
  * @param {string[]} segments  경로 조각 (예: ['api','warehouse-stock'])
@@ -37,7 +47,7 @@ export async function proxy(name, segments, req) {
 
   const init = {
     method: req.method,
-    headers: { accept: req.headers.get('accept') || 'application/json' },
+    headers: { accept: req.headers.get('accept') || 'application/json', ...upstreamAuthHeaders(name) },
     cache: 'no-store',
   };
 

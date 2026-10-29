@@ -63,6 +63,7 @@ export async function GET(req) {
   // 실패해도 전사 점검은 그대로 보여야 하므로 여기서 삼킨다.
   const dailyP = fetch(`${upstreamBase('on')}/api/daily-mail?date=${기준일}`, {
     cache: 'no-store',
+    headers: { authorization: `Bearer ${token}` },
     signal: AbortSignal.timeout(50_000),
   })
     .then((r) => (r.ok ? r.json() : null))
