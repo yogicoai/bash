@@ -24,11 +24,11 @@ import { useAsync } from '@/hooks/useAsync';
  *              원장을 못 받으면 예전 방식(실시간 API + 외부몰)으로 물러난다.
  *
  * 목표
- *   기본값은 API에서 읽고(오프라인은 매장 목표 합, 온라인은 채널 목표 합),
- *   직접 입력하면 그 값이 우선한다.
- *   입력값은 서버(onlineData Mongo)에 저장해 누가 보든 같은 값이 되게 한다.
+ *   오프라인 = 좌수 관리자의 매장별 월 목표 합(jwasu/dashboard targetMonthlySales)
+ *   온라인   = 판매분석의 채널별 월 목표 합(api/target 의 cafe24 + smartstore)
+ *   dash 에서 따로 입력받지 않는다 — 같은 값이 두 곳에 생기면 반드시 어긋난다.
+ *   목표를 고치려면 각 원천 화면에서 고친다(그래야 그 화면들과도 숫자가 맞는다).
  */
-const KEY = 'dash.monthlyTargets';
 
 /** 더 자세히 볼 곳 — 각자 원래 쓰던 화면으로 보낸다 */
 const MORE = {
@@ -45,53 +45,8 @@ const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/
 export default function TargetProgress() {
   const today = todayKST();
   const month = today.slice(0, 7);
-  const [custom, setCustom] = useState({});
-  const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState(null);
   const detailRef = useRef(null);
-  const [draft, setDraft] = useState({ offline: '', online: '' });
-
-  /**
-   * 입력한 목표는 서버에 둔다 — 예전에는 브라우저에만 남아 사람마다 다른 값을 봤다.
-   * 서버에 없고 이 브라우저에만 남아 있으면 한 번 옮겨준다.
-   */
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      let saved = null;
-      try {
-        const j = await fetch(`/api/targets?month=${month}`, { cache: 'no-store' }).then((r) => r.json());
-        if (j?.success && j.targets) saved = j.targets;
-      } catch {
-        /* 저장소가 막히면 아래 로컬값이나 원천 기본값으로 */
-      }
-      if (!alive) return;
-
-      if (saved) {
-        setCustom({ offline: saved.offline || 0, online: saved.online || 0 });
-        return;
-      }
-      let local = null;
-      try {
-        local = JSON.parse(localStorage.getItem(KEY) || '{}')[month] || null;
-      } catch {
-        /* 무시 */
-      }
-      if (local && (local.offline || local.online)) {
-        setCustom(local);
-        // 예전에 이 브라우저에만 넣어둔 값을 서버로 올린다
-        fetch('/api/targets', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ month, ...local }),
-        }).catch(() => {});
-      } else {
-        setCustom({});
-      }
-    })();
-    return () => { alive = false; };
-  }, [month]);
-
   // 어제까지 데이터를 다시 읽기 — 이카운트 반영이 늦거나 수집이 밀렸을 때
   const [tick, setTick] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -212,13 +167,15 @@ export default function TargetProgress() {
     if (!data.data) return null;
     const d = data.data;
     const expected = d.elapsed && d.total ? (d.elapsed / d.total) * 100 : null;
+    // 목표는 원천(좌수 관리자 매장별 월 목표 · 판매분석 채널별 월 목표)만 쓴다.
+    // dash 에서 따로 입력받으면 같은 값이 두 곳에 생겨 서로 어긋난다 — 실제로 온라인이
+    // 입력값 2.52억 / 원천 1.98억 으로 갈라져 달성률이 낮게 보였다.
     const build = (key, label, base) => {
-      const target = Number(custom[key]) > 0 ? Number(custom[key]) : base.target;
+      const target = base.target;
       const rate = target > 0 ? (base.actual / target) * 100 : null;
       return {
         key, label, target, actual: base.actual, rate,
         gap: rate != null && expected != null ? rate - expected : null,
-        edited: Number(custom[key]) > 0,
       };
     };
     return {
@@ -226,40 +183,7 @@ export default function TargetProgress() {
       offDaily: d.offDaily, onDaily: d.onDailyRows, onChannels: d.onChannels,
       rows: [build('offline', '오프라인', d.offline), build('online', '온라인', d.online)],
     };
-  }, [data.data, custom]);
-
-  function openEditor() {
-    setDraft({
-      offline: String(custom.offline || view?.rows[0].target || ''),
-      online: String(custom.online || view?.rows[1].target || ''),
-    });
-    setEditing(true);
-  }
-
-  function save() {
-    const next = {};
-    for (const k of ['offline', 'online']) {
-      const v = Number(String(draft[k]).replace(/[^0-9]/g, ''));
-      if (v > 0) next[k] = v;
-    }
-    setCustom(next);
-    fetch('/api/targets', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ month, ...next }),
-    }).catch(() => {});
-    setEditing(false);
-  }
-
-  function reset() {
-    setCustom({});
-    fetch('/api/targets', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ month }),
-    }).catch(() => {});
-    setEditing(false);
-  }
+  }, [data.data]);
 
   if (data.loading) return <div className="target-strip target-loading">이번 달 목표 불러오는 중…</div>;
   if (data.error || !view) return null;
@@ -283,32 +207,8 @@ export default function TargetProgress() {
         <button type="button" className="btn btn-sm" onClick={resync} disabled={syncing} title="어제까지 데이터를 다시 읽습니다">
           {syncing ? '동기화 중…' : '↻ 동기화'}
         </button>
-        <button type="button" className="btn btn-sm" onClick={editing ? () => setEditing(false) : openEditor}>
-          {editing ? '닫기' : '목표 입력'}
-        </button>
       </div>
 
-      {editing && (
-        <div className="target-edit">
-          {['offline', 'online'].map((k) => (
-            <label key={k}>
-              <span>{k === 'offline' ? '오프라인' : '온라인'} 목표</span>
-              <input
-                className="input"
-                inputMode="numeric"
-                value={draft[k]}
-                onChange={(e) => setDraft((d) => ({ ...d, [k]: e.target.value }))}
-                placeholder="원 단위"
-              />
-            </label>
-          ))}
-          <button type="button" className="btn btn-download" onClick={save}>저장</button>
-          <button type="button" className="btn" onClick={reset}>기본값</button>
-          <p className="target-note">
-            저장하면 모두가 같은 목표를 봅니다. 비우고 저장하면 원천 기본값으로 돌아갑니다.
-          </p>
-        </div>
-      )}
 
       {/* 보러 오는 건 "몇 % 왔나"다. 그 숫자를 가장 크게 두고 막대·금액은 뒤에 둔다. */}
       <div className="target-cards">
@@ -326,7 +226,6 @@ export default function TargetProgress() {
             <div className="target-card-top">
               <span className="target-card-label">
                 {r.label}
-                {r.edited && <em title="직접 입력한 목표">*</em>}
               </span>
               {r.gap != null && (
                 <span
