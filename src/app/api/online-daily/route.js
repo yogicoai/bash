@@ -9,6 +9,10 @@ import { upstreamBase } from '@/lib/upstream';
  *
  * 원장은 상품 한 줄씩이라 크다. 브라우저로 흘리지 않고 서버에서 날짜·채널로 접는다.
  * 토큰(EXPORT_TOKEN)은 서버에서만 읽는다.
+ *
+ * 월 목표도 같이 내려준다(targets-online). api/target 은 자사몰·스마트스토어 둘만 주는데
+ * 온라인 매출에는 쿠팡·오늘의집·롯데홈쇼핑 등 외부몰이 다 들어가므로, 목표도 전체 몰로
+ * 더해야 실적과 기준이 맞는다(2곳 1.98억 vs 전체 16곳 2.52억).
  */
 const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
@@ -24,12 +28,11 @@ export async function GET(req) {
   const start = `${month}-01`;
   const end = month === today.slice(0, 7) ? today : `${month}-${lastDay}`;
 
-  let rows;
-  try {
+  const exportGet = async (dataset, from, to) => {
     const url = new URL(`${upstreamBase('on')}/api/export`);
-    url.searchParams.set('dataset', 'sales-online');
-    url.searchParams.set('start', start);
-    url.searchParams.set('end', end);
+    url.searchParams.set('dataset', dataset);
+    url.searchParams.set('start', from);
+    url.searchParams.set('end', to);
     const res = await fetch(url, {
       cache: 'no-store',
       headers: { authorization: `Bearer ${token}` },
@@ -38,12 +41,29 @@ export async function GET(req) {
     if (res.status === 401) {
       throw new Error('EXPORT_TOKEN 이 onlineData 값과 다릅니다 (양쪽을 같은 값으로 맞추고 각각 Redeploy)');
     }
-    if (!res.ok) throw new Error(`export → ${res.status}`);
+    if (!res.ok) throw new Error(`export(${dataset}) → ${res.status}`);
     const json = await res.json();
-    rows = json?.rows || json?.data || (Array.isArray(json) ? json : []);
+    return json?.rows || json?.data || (Array.isArray(json) ? json : []);
+  };
+
+  let rows;
+  let targetRows = [];
+  try {
+    // 목표는 그 달 전체 구간으로 — 실적 구간(어제까지)과 달리 월 단위 값이다
+    [rows, targetRows] = await Promise.all([
+      exportGet('sales-online', start, end),
+      exportGet('targets-online', `${month}-01`, `${month}-${lastDay}`).catch(() => []),
+    ]);
   } catch (err) {
     return Response.json({ success: false, error: String(err.message || err) }, { status: 502 });
   }
+
+  // 몰별 월 목표 — 0 인 몰도 목록에는 남긴다(설정이 비었는지 보이게)
+  const targets = targetRows
+    .filter((r) => String(r.month || '').slice(0, 7) === month)
+    .map((r) => ({ name: r.mall || r.name || '미지정', target: Number(r.target || 0) }))
+    .sort((a, b) => b.target - a.target);
+  const targetTotal = targets.reduce((a, t) => a + t.target, 0);
 
   // 날짜 → 채널 → 금액. 상품까지 내려보내면 응답이 커져 채널까지만 접는다.
   const byDate = new Map();
@@ -69,7 +89,15 @@ export async function GET(req) {
     .sort((a, b) => a.date.localeCompare(b.date));
 
   return Response.json(
-    { success: true, month, start, end, lines: rows.length, total: daily.reduce((a, d) => a + d.sales, 0), daily },
+    {
+      success: true,
+      month, start, end,
+      lines: rows.length,
+      total: daily.reduce((a, d) => a + d.sales, 0),
+      daily,
+      targetTotal,
+      targets,
+    },
     { headers: { 'cache-control': 'no-store' } },
   );
 }

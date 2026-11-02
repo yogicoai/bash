@@ -25,7 +25,10 @@ import { useAsync } from '@/hooks/useAsync';
  *
  * 목표
  *   오프라인 = 좌수 관리자의 매장별 월 목표 합(jwasu/dashboard targetMonthlySales)
- *   온라인   = 판매분석의 채널별 월 목표 합(api/target 의 cafe24 + smartstore)
+ *   온라인   = 몰별 월 목표 전체 합(export targets-online — 자사몰·스마트스토어뿐
+ *              아니라 쿠팡·오늘의집·롯데홈쇼핑 등 외부몰까지 16곳). 실적에 외부몰이
+ *              들어가므로 목표도 전체 몰이어야 기준이 맞는다.
+ *              못 받으면 api/target(자사몰+스마트스토어)으로 물러난다.
  *   dash 에서 따로 입력받지 않는다 — 같은 값이 두 곳에 생기면 반드시 어긋난다.
  *   목표를 고치려면 각 원천 화면에서 고친다(그래야 그 화면들과도 숫자가 맞는다).
  */
@@ -36,9 +39,16 @@ const MORE = {
   online: { href: 'https://on-iota-three.vercel.app/', label: '온라인 판매분석에서 보기' },
 };
 const fmt = (n) => Math.round(n || 0).toLocaleString();
+/**
+ * 금액 줄임 — 억은 소수 둘째 자리까지 보인다.
+ * 2.05억을 2.0억으로 뭉개면 목표가 바뀐 줄 모른다(5백만 원이 사라진다).
+ * 끝자리 0 은 떼어 2억 · 2.5억 · 2.05억 처럼 읽히게 한다.
+ */
 const eok = (n) => {
-  const v = Math.round((n || 0) / 10000);
-  return v >= 10000 ? `${(v / 10000).toFixed(1)}억` : `${fmt(v)}만`;
+  const man = Math.round((n || 0) / 10000);
+  if (man < 10000) return `${fmt(man)}만`;
+  const 억 = (man / 10000).toFixed(2).replace(/\.?0+$/, '');
+  return `${억}억`;
 };
 const todayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
@@ -154,7 +164,10 @@ export default function TargetProgress() {
       onChannels,
       offline: { target: offTarget, actual: offActual },
       online: {
-        target: (target?.cafe24?.target || 0) + (target?.smartstore?.target || 0),
+        target: Number(onDaily?.targetTotal) > 0
+          ? Number(onDaily.targetTotal)
+          : (target?.cafe24?.target || 0) + (target?.smartstore?.target || 0),
+        targetMalls: onDaily?.targets || [],
         actual: onDailyRows.length
           ? onDailyRows.reduce((a, d) => a + d.sales, 0)
           : mall + outside,
